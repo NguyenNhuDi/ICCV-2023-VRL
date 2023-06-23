@@ -1,0 +1,17 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args":["-d", "/home/student/andrew/Documents/Seg3D/datasets/main", "-m", "/home/student/andrew/Documents/Seg3D/src/models/model_definitions/unetlike.json", "-folds", "0", "--_2d"]
+        }
+    ]
+}
