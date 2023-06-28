@@ -1,2 +1,0 @@
-CONCAT='concat'
-ADD='add'
