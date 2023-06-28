@@ -35,6 +35,30 @@ class WeedAndCropDataset(Dataset):
         self.logger_queue = mp.JoinableQueue()
         self.command_queue = mp.JoinableQueue()
 
+        # Starting the processes
+
+        self.processes = []
+
+        for _ in range(num_procsses):
+            proc = mp.Process(target=WeedAndCropDataset.__get_and_transform_image__,
+                              args=(self.path_queue,
+                                    self.image_queue,
+                                    self.mask_queue,
+                                    self.logger_queue,
+                                    self.transform))
+
+            proc.daemon = True
+            self.processes.append(proc)
+
+        self.path_handler = mp.Process(target=WeedAndCropDataset.__path_process__,
+                                       args=(self.command_queue,
+                                             self.path_queue,
+                                             self.image_source,
+                                             self.mask_source))
+
+        self.logger = mp.Process(target=WeedAndCropDataset.__logger_process__,
+                                 args=(self.logger_queue,))
+
     @staticmethod
     def __path_process__(command_queue: mp.JoinableQueue,
                          path_queue: mp.JoinableQueue,
