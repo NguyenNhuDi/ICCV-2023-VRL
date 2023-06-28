@@ -23,10 +23,8 @@ class WeedAndCropDataset(Dataset):
                  transform=None,
                  num_procsses=1, ):
         self.image_source = glob.glob(f'{image_dir}/*.png')
-        random.shuffle(self.image_source)
 
         self.mask_source = glob.glob(f'{mask_dir}/*.png')
-        random.shuffle(self.mask_source)
 
         self.transform = transform
 
@@ -35,6 +33,29 @@ class WeedAndCropDataset(Dataset):
         self.image_queue = mp.JoinableQueue()
         self.mask_queue = mp.JoinableQueue()
         self.logger_queue = mp.JoinableQueue()
+        self.command_queue = mp.JoinableQueue()
+
+    @staticmethod
+    def __path_process__(command_queue: mp.JoinableQueue,
+                         path_queue: mp.JoinableQueue,
+                         image_source,
+                         mask_source):
+        while True:
+
+            try:
+                command = command_queue.get()
+                if command is None:
+                    break
+                random.shuffle(image_source)
+                random.shuffle(mask_source)
+
+                for i in range(len(image_source)):
+                    path_queue.put((image_source[i], mask_source[i]))
+            except queue.Empty:
+                time.sleep(1)  # sleep for a while before trying again
+                continue
+            else:
+                command_queue.task_done()
 
     @staticmethod
     def __logger_process__(logger_queue: mp.JoinableQueue):
