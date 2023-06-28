@@ -38,7 +38,7 @@ class WeedAndCropDataset(Dataset):
 
     @staticmethod
     def __logger_process__(logger_queue: mp.JoinableQueue):
-        logging.basicConfig(filename='echo_error.log', filemode='w',
+        logging.basicConfig(filename='transform_error.log', filemode='w',
                             format='%(name)s - %(levelname)s - %(message)s',
                             force=True)
         logger = logging.getLogger()
