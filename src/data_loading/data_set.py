@@ -2,9 +2,7 @@ import logging
 import multiprocessing as mp
 import queue
 import time
-
 import glob
-
 import torch
 import random
 from torch.utils.data import Dataset
@@ -152,4 +150,3 @@ class WeedAndCropDataset(Dataset):
             except queue.Empty:
                 time.sleep(1) # wait a bit before trying again
                 continue
-
