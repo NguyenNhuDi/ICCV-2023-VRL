@@ -1,8 +1,11 @@
 import argparse
 import json
+import logging
 import multiprocessing as mp
 import queue
 import os
+import time
+
 import pandas as pd
 import glob
 
@@ -32,6 +35,26 @@ class WeedAndCropDataset(Dataset):
         self.image_queue = mp.JoinableQueue()
         self.mask_queue = mp.JoinableQueue()
         self.logger_queue = mp.JoinableQueue()
+
+    @staticmethod
+    def __logger_process__(logger_queue: mp.JoinableQueue):
+        logging.basicConfig(filename='echo_error.log', filemode='w',
+                            format='%(name)s - %(levelname)s - %(message)s',
+                            force=True)
+        logger = logging.getLogger()
+
+        while True:
+            try:
+                message = logger_queue.get(1)
+                if message is None:
+                    break
+                logger.error(message)
+            except queue.Empty:
+                time.sleep(1)  # Sleep for a while before trying again.
+                print('Empty')
+                continue
+            else:
+                logger_queue.task_done()
 
     @staticmethod
     def __get_and_transform_image__(path_queue: mp.JoinableQueue,
