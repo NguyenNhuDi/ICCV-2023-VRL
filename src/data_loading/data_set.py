@@ -105,6 +105,10 @@ class WeedAndCropDataset(Dataset):
                 image_queue.put(image)
                 mask_queue.put(mask)
 
+            except queue.Empty:
+                time.sleep(1)
+                continue
+
             except Exception as e:
                 logger_queue.put(f'{str(e)} >> {image_path} && {mask_path}')
             finally:
