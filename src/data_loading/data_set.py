@@ -13,9 +13,17 @@ from torch.utils.data import Dataset
 
 
 class WeedAndCropDataset(Dataset):
-    def __init__(self, image_dir, instances_dir, visibility_dir, semantics_dir):
+    def __init__(self, image_dir,
+                 instances_dir,
+                 visibility_dir,
+                 semantics_dir,
+                 num_procsses=1,):
         self.image_source = glob.glob(f'{image_dir}/*.png')
         self.instance_source = glob.glob(f'{instances_dir}/*.png')
         self.visibility_source = glob.glob(f'{visibility_dir}/*.png')
         self.semantic_source = glob.glob(f'{semantics_dir}/*.png')
+
+    def __len__(self):
+        return len(self.image_source)
+
 
