@@ -20,6 +20,7 @@ import cv2
 class WeedAndCropDataset(Dataset):
     def __init__(self, image_dir,
                  mask_dir,
+                 epochs,
                  transform=None,
                  num_procsses=1, ):
         self.image_source = glob.glob(f'{image_dir}/*.png')
@@ -28,12 +29,13 @@ class WeedAndCropDataset(Dataset):
 
         self.transform = transform
 
+        self.epochs = epochs
+
         # Queue creations
         self.path_queue = mp.JoinableQueue()
         self.image_queue = mp.JoinableQueue()
         self.mask_queue = mp.JoinableQueue()
         self.logger_queue = mp.JoinableQueue()
-        self.command_queue = mp.JoinableQueue()
 
         # Starting the processes
 
@@ -50,36 +52,16 @@ class WeedAndCropDataset(Dataset):
             proc.daemon = True
             self.processes.append(proc)
 
-        self.path_handler = mp.Process(target=WeedAndCropDataset.__path_process__,
-                                       args=(self.command_queue,
-                                             self.path_queue,
-                                             self.image_source,
-                                             self.mask_source))
-
         self.logger = mp.Process(target=WeedAndCropDataset.__logger_process__,
                                  args=(self.logger_queue,))
 
-    @staticmethod
-    def __path_process__(command_queue: mp.JoinableQueue,
-                         path_queue: mp.JoinableQueue,
-                         image_source,
-                         mask_source):
-        while True:
+    def __populate_path_queue__(self):
+        for i in range(self.epochs):
+            random.shuffle(self.image_source)
+            random.shuffle(self.mask_source)
 
-            try:
-                command = command_queue.get()
-                if command is None:
-                    break
-                random.shuffle(image_source)
-                random.shuffle(mask_source)
-
-                for i in range(len(image_source)):
-                    path_queue.put((image_source[i], mask_source[i]))
-            except queue.Empty:
-                time.sleep(1)  # sleep for a while before trying again
-                continue
-            else:
-                command_queue.task_done()
+            for j in range(len(self.image_source)):
+                self.path_queue.put((self.image_source[i], self.mask_source[i]))
 
     @staticmethod
     def __logger_process__(logger_queue: mp.JoinableQueue):
