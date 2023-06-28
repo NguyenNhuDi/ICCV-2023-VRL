@@ -1,17 +1,11 @@
-import argparse
-import json
 import logging
 import multiprocessing as mp
 import queue
-import os
 import time
 
-import pandas as pd
 import glob
 
 import torch
-import numpy as np
-import torchvision
 import random
 from torch.utils.data import Dataset
 import cv2
@@ -22,13 +16,11 @@ class WeedAndCropDataset(Dataset):
                  mask_dir,
                  epochs,
                  transform=None,
-                 num_procsses=1, ):
+                 num_processes=1):
         self.image_source = glob.glob(f'{image_dir}/*.png')
-
         self.mask_source = glob.glob(f'{mask_dir}/*.png')
-
         self.transform = transform
-
+        self.num_processes = num_processes
         self.epochs = epochs
 
         # Queue creations
@@ -41,7 +33,7 @@ class WeedAndCropDataset(Dataset):
 
         self.processes = []
 
-        for _ in range(num_procsses):
+        for _ in range(num_processes):
             proc = mp.Process(target=WeedAndCropDataset.__get_and_transform_image__,
                               args=(self.path_queue,
                                     self.image_queue,
@@ -56,6 +48,10 @@ class WeedAndCropDataset(Dataset):
                                  args=(self.logger_queue,))
 
     def __populate_path_queue__(self):
+        # putting sentinel values to the path queue so that it can end
+        for i in range(self.num_processes):
+            self.path_queue.put((None, None))
+
         for i in range(self.epochs):
             random.shuffle(self.image_source)
             random.shuffle(self.mask_source)
@@ -111,14 +107,49 @@ class WeedAndCropDataset(Dataset):
                 image_queue.put(image)
                 mask_queue.put(mask)
 
-            except queue.Empty:
-                time.sleep(1)
-                continue
-
             except Exception as e:
                 logger_queue.put(f'{str(e)} >> {image_path} && {mask_path}')
             finally:
                 path_queue.task_done()
 
+        logger_queue.put(None)
+
+    def start(self):
+        self.__populate_path_queue__()
+        self.logger.start()
+
+        for process in self.processes:
+            process.start()
+
+    def join(self):
+        print("Begin Joining")
+
+        self.path_queue.join()
+
+        for process in self.processes:
+            process.join()
+
+        self.logger_queue.join()
+        self.image_queue.join()
+        self.mask_queue.join()
+
+        print("Finished Joining")
+
     def __len__(self):
         return len(self.image_source)
+
+    def __getitem__(self, index):
+
+        while True:
+            try:
+                image = self.image_queue.get()
+                mask = self.mask_queue.get()
+
+                self.image_queue.task_done()
+                self.mask_queue.task_done()
+
+                return image, mask
+            except queue.Empty:
+                time.sleep(1) # wait a bit before trying again
+                continue
+
