@@ -17,11 +17,11 @@ Weed and Crop Dataset
 
 Attributes
 ----------------------------------------------------------------
-    image_dir : str
-        the source directory to the images
+    image_dir : np.array
+        a numpy array holding all the path of the images
         
-    mask_dir : str
-        the source directory to the masks
+    mask_dir : np.array
+        a numpy array holding all the path of the masks
     
     epochs : int
         the number of epochs the model will be trained with
@@ -49,6 +49,30 @@ Attributes
         
     read_transform_processes : List[process]
         the list that holds all the processes that will read and transform the images and mask
+        
+Methods
+ ----------------------------------------------------------------
+    __init__ : None
+        store the image and mask directory, number of training epochs
+        transformation function and the number of processes
+        it will also define the joinable queues and define the read transform processes
+    
+    __populate_path_queue__ : None
+        populate the path_queue with the image and mask path in a random order
+        
+    __read_transform_image_mask__ : None
+        read the image and mask and augment them. The result will be enqueued onto image_mask_queue
+    
+    start : None
+        start the processes
+    Join : None
+        join the processes and queue
+     
+     __len__ : int
+        return the length of the dataset
+    
+    __getitem__ : tensor, tensor
+        return the image and mask that is in front of image_mask_queue
 """
 
 
