@@ -8,7 +8,52 @@ from torch.utils.data import Dataset
 import cv2
 
 
+"""NOTE in the documentation transforms and augmented are used interchangeably"""
+
+"""
+Weed and Crop Dataset
+    The dataset responsible for loading and transforming images 
+    and masks for segmentation tasks
+
+Attributes
+----------------------------------------------------------------
+    image_dir : str
+        the source directory to the images
+        
+    mask_dir : str
+        the source directory to the masks
+    
+    epochs : int
+        the number of epochs the model will be trained with
+    
+    transform : 
+        the function responsible for augmenting the image and mask
+    
+    num_processes : int
+        the number of processes that the dataset will use
+        
+    path_queue : JoinableQueue
+        the queue that will hold all the paths to the individual images and mask
+        the item in the queue is stored as a tuple with the format (image_path, mask_path)
+        it will hold epoch * images amount of item
+    
+    image_mask_queue : JoinableQueue
+        the queue that will hold all the augmented images and mask
+        the item in the queue is stored as a tuple with the format (augmented_image, augmented_mask)
+        it will hold a maximum (epoch * images) + num_processes amount of item
+        
+    command_queue : JoinableQueue
+        the queue that will determines when the transformation processes will end
+        the item in the queue will only ever by None
+        and it will hold a maximum num_processes amount of item
+        
+    read_transform_processes : List[process]
+        the list that holds all the processes that will read and transform the images and mask
+"""
+
+
 class WeedAndCropDataset(Dataset):
+
     def __init__(self, image_dir,
                  mask_dir,
                  epochs=1,
