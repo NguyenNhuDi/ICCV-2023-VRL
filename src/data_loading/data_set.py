@@ -44,7 +44,7 @@ Attributes
         
     command_queue : JoinableQueue
         the queue that will determines when the transformation processes will end
-        the item in the queue will only ever by None
+        the item in the queue will only ever be None
         and it will hold a maximum num_processes amount of item
         
     read_transform_processes : List[process]
