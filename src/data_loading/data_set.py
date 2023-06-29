@@ -8,7 +8,128 @@ from torch.utils.data import Dataset
 import cv2
 
 
+"""NOTE in the documentation transforms and augmented are used interchangeably"""
+
+"""
+Weed and Crop Dataset
+    The dataset responsible for loading and transforming images 
+    and masks for segmentation tasks
+
+Attributes
+----------------------------------------------------------------
+    image_dir : np.array
+        a numpy array holding all the path of the images
+        
+    mask_dir : np.array
+        a numpy array holding all the path of the masks
+    
+    epochs : int
+        the number of epochs the model will be trained with
+    
+    transform : 
+        the function responsible for augmenting the image and mask
+    
+    num_processes : int
+        the number of processes that the dataset will use
+        
+    path_queue : JoinableQueue
+        the queue that will hold all the paths to the individual images and mask
+        the item in the queue is stored as a tuple with the format (image_path, mask_path)
+        it will hold epoch * images amount of item
+    
+    image_mask_queue : JoinableQueue
+        the queue that will hold all the augmented images and mask
+        the item in the queue is stored as a tuple with the format (augmented_image, augmented_mask)
+        it will hold a maximum (epoch * images) + num_processes amount of item
+        
+    command_queue : JoinableQueue
+        the queue that will determines when the transformation processes will end
+        the item in the queue will only ever be None
+        and it will hold a maximum num_processes amount of item
+        
+    read_transform_processes : List[process]
+        the list that holds all the processes that will read and transform the images and mask
+        
+Methods
+ ----------------------------------------------------------------
+    __init__ : None
+        store the image and mask directory, number of training epochs
+        transformation function and the number of processes
+        it will also define the joinable queues and define the read transform processes
+        
+        parameters:
+        
+            image_dir : str
+                the absolute path to the directory containing the images
+                
+            mask_dir : str
+                the absolute path to the directory containing the masks
+                
+            epochs : int, optional
+                the number of epochs the model will be trained with
+                default is 1
+                
+            transform : optional
+                the transformation function that will augment the images and masks
+                default is None
+                
+            num_processes : int, optional
+                the number of processes
+                default is 1
+    
+    __populate_path_queue__ : None
+        populate the path_queue with the image and mask path in a random order
+        
+        parameters:
+            None
+        
+    __read_transform_image_mask__ : None
+        read the image and mask and augment them. The result will be enqueued onto image_mask_queue
+        
+        parameters:
+            path_queue : JoinableQueue
+                the queue containing all the paths
+            
+            image_mask_queue : JoinableQueue
+                the output queue holding all transformed images and masks
+            
+            command_queue : JoinableQueue
+                the queue that will define when this method will terminate
+            
+            transform : optional
+                the transformation function that will be applied to the images and masks
+                default is None
+                
+    start : None
+        start the processes
+        
+        parameters:
+            None
+        
+    Join : None
+        join the processes and queue
+        
+        parameters:
+            None
+     
+     __len__ : int
+        return the length of the dataset
+        
+        parameters:
+            None
+    
+    __getitem__ : tensor, tensor
+        return the image and mask that is in front of image_mask_queue
+        
+        parameters:
+            index : int
+                following torch Dataset structure this function must have an index parameter
+                however it will be ignored completely
+"""
+
+
 class WeedAndCropDataset(Dataset):
+
     def __init__(self, image_dir,
                  mask_dir,
                  epochs=1,
