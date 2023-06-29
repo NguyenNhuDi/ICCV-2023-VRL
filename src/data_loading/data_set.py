@@ -56,23 +56,75 @@ Methods
         store the image and mask directory, number of training epochs
         transformation function and the number of processes
         it will also define the joinable queues and define the read transform processes
+        
+        parameters:
+        
+            image_dir : str
+                the absolute path to the directory containing the images
+                
+            mask_dir : str
+                the absolute path to the directory containing the masks
+                
+            epochs : int, optional
+                the number of epochs the model will be trained with
+                default is 1
+                
+            transform : optional
+                the transformation function that will augment the images and masks
+                default is None
+                
+            num_processes : int, optional
+                the number of processes
+                default is 1
     
     __populate_path_queue__ : None
         populate the path_queue with the image and mask path in a random order
         
+        parameters:
+            None
+        
     __read_transform_image_mask__ : None
         read the image and mask and augment them. The result will be enqueued onto image_mask_queue
-    
+        
+        parameters:
+            path_queue : JoinableQueue
+                the queue containing all the paths
+            
+            image_mask_queue : JoinableQueue
+                the output queue holding all transformed images and masks
+            
+            command_queue : JoinableQueue
+                the queue that will define when this method will terminate
+            
+            transform : optional
+                the transformation function that will be applied to the images and masks
+                default is None
+                
     start : None
         start the processes
+        
+        parameters:
+            None
+        
     Join : None
         join the processes and queue
+        
+        parameters:
+            None
      
      __len__ : int
         return the length of the dataset
+        
+        parameters:
+            None
     
     __getitem__ : tensor, tensor
         return the image and mask that is in front of image_mask_queue
+        
+        parameters:
+            index : int
+                following torch Dataset structure this function must have an index parameter
+                however it will be ignored completely
 """
 
 
