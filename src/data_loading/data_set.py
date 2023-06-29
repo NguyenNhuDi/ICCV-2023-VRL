@@ -1,10 +1,9 @@
-import logging
 import multiprocessing as mp
+import numpy as np
 import queue
 import time
 import glob
 import torch
-import random
 from torch.utils.data import Dataset
 import cv2
 
@@ -12,141 +11,136 @@ import cv2
 class WeedAndCropDataset(Dataset):
     def __init__(self, image_dir,
                  mask_dir,
-                 epochs,
+                 epochs=1,
                  transform=None,
                  num_processes=1):
-        self.image_source = glob.glob(f'{image_dir}/*.png')
-        self.mask_source = glob.glob(f'{mask_dir}/*.png')
+        # storing parameters
+        self.image_dir = np.array(glob.glob(f'{image_dir}/*.png'))
+        self.mask_dir = np.array(glob.glob(f'{mask_dir}/*.png'))
+        self.epochs = epochs
         self.transform = transform
         self.num_processes = num_processes
-        self.epochs = epochs
 
-        # Queue creations
+        # defining the joinable queues
         self.path_queue = mp.JoinableQueue()
-        self.image_queue = mp.JoinableQueue()
-        self.mask_queue = mp.JoinableQueue()
-        self.logger_queue = mp.JoinableQueue()
+        self.image_mask_queue = mp.JoinableQueue()
+        self.command_queue = mp.JoinableQueue()
 
-        # Starting the processes
-
-        self.processes = []
+        # defining the processes
+        self.read_transform_processes = []
 
         for _ in range(num_processes):
-            proc = mp.Process(target=WeedAndCropDataset.__get_and_transform_image__,
+            proc = mp.Process(target=WeedAndCropDataset.__read_transform_image_mask__,
                               args=(self.path_queue,
-                                    self.image_queue,
-                                    self.mask_queue,
-                                    self.logger_queue,
+                                    self.image_mask_queue,
+                                    self.command_queue,
                                     self.transform))
-
-            proc.daemon = True
-            self.processes.append(proc)
-
-        self.logger = mp.Process(target=WeedAndCropDataset.__logger_process__,
-                                 args=(self.logger_queue,))
+            self.read_transform_processes.append(proc)
 
     def __populate_path_queue__(self):
-        # putting sentinel values to the path queue so that it can end
+        for i in range(self.epochs):
+            # shuffle the path array, so we can still get random order
+            shuffler = np.random.permutation(len(self.image_dir))
+            self.image_dir = self.image_dir[shuffler]
+            self.mask_dir = self.mask_dir[shuffler]
+
+            for j in range(len(self.image_dir)):
+                self.path_queue.put((self.image_dir[j], self.mask_dir[j]))
+
+        # adding sentinel values so that the consumer can terminate
         for i in range(self.num_processes):
             self.path_queue.put((None, None))
 
-        for i in range(self.epochs):
-            random.shuffle(self.image_source)
-            random.shuffle(self.mask_source)
-
-            for j in range(len(self.image_source)):
-                self.path_queue.put((self.image_source[i], self.mask_source[i]))
+    """
+    Consumer process of __populate_path_queue__
+    Producer process to __getitem__
+    """
 
     @staticmethod
-    def __logger_process__(logger_queue: mp.JoinableQueue):
-        logging.basicConfig(filename='transform_error.log', filemode='w',
-                            format='%(name)s - %(levelname)s - %(message)s',
-                            force=True)
-        logger = logging.getLogger()
+    def __read_transform_image_mask__(path_queue: mp.JoinableQueue,
+                                      image_mask_queue: mp.JoinableQueue,
+                                      command_queue: mp.JoinableQueue,
+                                      transform=None):
 
         while True:
-            try:
-                message = logger_queue.get(1)
-                if message is None:
-                    break
-                logger.error(message)
-            except queue.Empty:
-                time.sleep(1)  # Sleep for a while before trying again.
-                print('Empty')
-                continue
-            else:
-                logger_queue.task_done()
+            image_path, mask_path = path_queue.get()
 
-    @staticmethod
-    def __get_and_transform_image__(path_queue: mp.JoinableQueue,
-                                    image_queue: mp.JoinableQueue,
-                                    mask_queue: mp.JoinableQueue,
-                                    logger_queue: mp.JoinableQueue,
-                                    transform=None):
-        while True:
-            try:
-                image_path, mask_path = path_queue.get()
-                # Thread ending condition
-                if image_path is None or mask_path is None:
-                    break
-
-                image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
-                mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-
-                if transform is not None:
-                    augmented = transform(image=image, mask=mask)
-                    image = augmented['image']
-                    mask = augmented['mask']
-
-                # turning them into tensors
-                image = torch.from_numpy(image).permute(2, 1, 0)
-                mask = torch.from_numpy(mask).unsqueeze(0)
-
-                image_queue.put(image)
-                mask_queue.put(mask)
-
-            except Exception as e:
-                logger_queue.put(f'{str(e)} >> {image_path} && {mask_path}')
-            finally:
+            # sentinel value is read, time to terminate
+            if image_path is None:
                 path_queue.task_done()
+                image_mask_queue.put((None, None))
 
-        logger_queue.put(None)
+                break
+
+            image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
+            mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+
+            # converting the type of number from int to float and turn the pixels into the range [0,1]
+            image = np.array(image, dtype=np.float32) / 255.0
+            mask = np.array(mask, dtype=np.float32) / 255.0
+
+            # applying the transformations
+            if transform is not None:
+                augmented = transform(image=image, mask=mask)
+                image = augmented['image']
+                mask = augmented['mask']
+
+            # converting the image and mask into tensors
+            image = torch.from_numpy(image)
+            mask = torch.from_numpy(mask).unsqueeze(0)
+
+            # putting the image and mask into a queue
+            image_mask_queue.put((image, mask))
+
+            # telling the queue the task is done
+            path_queue.task_done()
+
+        while True:
+            try:
+                out = command_queue.get()
+                if out is None:
+                    command_queue.task_done()
+                    break
+            except queue.Empty:
+                time.sleep(0.5)
+                continue
+
+    """
+    Populate queue path and initialize the processes
+    """
 
     def start(self):
         self.__populate_path_queue__()
-        self.logger.start()
 
-        for process in self.processes:
+        for process in self.read_transform_processes:
             process.start()
 
+    """
+    Join the processes and terminates them
+    """
+
     def join(self):
-        print("Begin Joining")
 
-        self.path_queue.join()
-
-        for process in self.processes:
+        for process in self.read_transform_processes:
             process.join()
 
-        self.logger_queue.join()
-        self.image_queue.join()
-        self.mask_queue.join()
+        self.image_mask_queue.join()
 
-        print("Finished Joining")
+    """DEFAULT METHODS FOR DATASET"""
 
     def __len__(self):
-        return len(self.image_source)
+        return len(self.image_dir)
 
     def __getitem__(self, index):
+        try:
+            image, mask = self.image_mask_queue.get()
+            self.image_mask_queue.task_done()
 
-        while True:
-            try:
-                image = self.image_queue.get()
-                mask = self.mask_queue.get()
+            if image is None:
+                self.command_queue.put(None)
+                return None, None
 
-                self.image_queue.task_done()
-                self.mask_queue.task_done()
-
-                return image, mask
-            except queue.Empty:
-                time.sleep(1) # wait a bit before trying again
-                continue
+            return image, mask
+        except queue.Empty:
+            time.sleep(0.2)  # wait a bit before trying again
+            return self.__getitem__(index)
