@@ -134,8 +134,6 @@ class WeedAndCropDataset(Dataset):
                  epochs=1,
                  transform=None,
                  num_processes=1):
-        # counter to tell when the processes terminate
-        self.none_counter = 0
 
         # storing parameters
         self.image_dir = np.array(glob.glob(f'{image_dir}/*.png'))
@@ -159,6 +157,10 @@ class WeedAndCropDataset(Dataset):
                                     self.command_queue,
                                     self.transform))
             self.read_transform_processes.append(proc)
+
+        # counter to tell when the processes terminate
+        self.max_queue_size = epochs * len(self.image_dir)
+        self.accessed = 0
 
     def __populate_path_queue__(self):
         for i in range(self.epochs):
@@ -191,8 +193,6 @@ class WeedAndCropDataset(Dataset):
             # sentinel value is read, time to terminate
             if image_path is None:
                 path_queue.task_done()
-                image_mask_queue.put((None, None))
-
                 break
 
             image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
@@ -259,17 +259,14 @@ class WeedAndCropDataset(Dataset):
             image, mask = self.image_mask_queue.get()
             self.image_mask_queue.task_done()
 
-            if image is None:
-                self.none_counter += 1
+            self.accessed += 1
 
-                # if the none counter is the same amount of processes this means that all processes eof is reached
-                # deploy the None into command queue to terminate them
-                # this is essential in stopping NO FILE found error
-                if self.none_counter == self.num_processes:
-                    for i in range(self.num_processes):
-                        self.command_queue.put(None)
-
-                return None, None
+            # if the none counter is the same amount of processes this means that all processes eof is reached
+            # deploy the None into command queue to terminate them
+            # this is essential in stopping NO FILE found error
+            if self.accessed == self.max_queue_size:
+                for i in range(self.num_processes):
+                    self.command_queue.put(None)
 
             return image, mask
         except queue.Empty:
