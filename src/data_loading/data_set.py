@@ -48,6 +48,12 @@ Attributes
         
     read_transform_processes : List[process]
         the list that holds all the processes that will read and transform the images and mask
+    
+    max_queue_size : int
+        the maximum amount of item that is possible for the stored processed image in a queue
+        
+    accessed : int
+        how many times the image_mask_queue has been accessed
         
 Methods
  ----------------------------------------------------------------
