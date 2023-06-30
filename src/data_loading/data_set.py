@@ -7,7 +7,6 @@ import torch
 from torch.utils.data import Dataset
 import cv2
 
-
 """NOTE in the documentation transforms and augmented are used interchangeably"""
 
 """
@@ -135,6 +134,9 @@ class WeedAndCropDataset(Dataset):
                  epochs=1,
                  transform=None,
                  num_processes=1):
+        # counter to tell when the processes terminate
+        self.none_counter = 0
+
         # storing parameters
         self.image_dir = np.array(glob.glob(f'{image_dir}/*.png'))
         self.mask_dir = np.array(glob.glob(f'{mask_dir}/*.png'))
@@ -258,7 +260,15 @@ class WeedAndCropDataset(Dataset):
             self.image_mask_queue.task_done()
 
             if image is None:
-                self.command_queue.put(None)
+                self.none_counter += 1
+
+                # if the none counter is the same amount of processes this means that all processes eof is reached
+                # deploy the None into command queue to terminate them
+                # this is essential in stopping NO FILE found error
+                if self.none_counter == self.num_processes:
+                    for i in range(self.num_processes):
+                        self.command_queue.put(None)
+
                 return None, None
 
             return image, mask
