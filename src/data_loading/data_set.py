@@ -272,3 +272,14 @@ class WeedAndCropDataset(Dataset):
         except queue.Empty:
             time.sleep(0.2)  # wait a bit before trying again
             return self.__getitem__(index)
+            
+def batch(self, size):
+    image_batch, mask_batch = [], []
+    for i in range(int(size)):
+        image, mask = self.image_mask_queue.get()
+        image_batch.append(image)
+        mask_batch.append(mask)
+        self.image_mask_queue.taskdone()
+    image_batch = torch.stack(image_batch, axis=0)
+    mask_batch = torch.stack(mask_batch, axis=0)
+    return image_batch, mask_batch
