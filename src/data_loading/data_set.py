@@ -164,10 +164,19 @@ class WeedAndCropDataset:
             self.read_transform_processes.append(proc)
 
         # counter to tell when the processes terminate
-        self.max_queue_size = epochs * len(self.image_dir)
         self.accessed = 0
 
+        # doing math to figure out how many iterations must be run outside
+        # and what the last batch size will be
+
+        total_size = self.epochs * self.__len__()
+
+        self.run_amount = math.ceil(total_size / batch_size) + num_processes
+        self.full_batches = (total_size // batch_size) * batch_size
+        self.max_queue_size = total_size // batch_size + 1
+
     def __populate_path_queue__(self):
+        counter = 0
         for i in range(self.epochs):
             # shuffle the path array, so we can still get random order
             shuffler = np.random.permutation(len(self.image_dir))
@@ -176,6 +185,7 @@ class WeedAndCropDataset:
 
             for j in range(len(self.image_dir)):
                 self.path_queue.put((self.image_dir[j], self.mask_dir[j]))
+                counter += 1
 
         # adding sentinel values so that the consumer can terminate
         for i in range(self.num_processes):
@@ -290,7 +300,6 @@ class WeedAndCropDataset:
             except queue.Empty:
                 time.sleep(0.01)
                 i -= 1
-                continue
 
         # converting to np arr
         # image_batch = np.array(image_batch)
@@ -303,8 +312,8 @@ class WeedAndCropDataset:
 
 
 if __name__ == '__main__':
-    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
-    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
+    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\images'
+    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\leaf_instances'
 
     transform = A.Compose([
         A.Resize(256, 256),
@@ -314,9 +323,9 @@ if __name__ == '__main__':
         A.HueSaturationValue()
     ])
 
-    epochs = 50
+    epochs = 10
     num_processes = 6
-    batch_size = 10
+    batch_size = 32
 
     test_dataset = WeedAndCropDataset(image_path,
                                       mask_path,
@@ -330,6 +339,7 @@ if __name__ == '__main__':
 
     for i in range(math.ceil(epochs * test_dataset.__len__() / batch_size)):
         image, mask = test_dataset.get_item()
+        print(f'Iteration: {i}, shape: {image.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
         # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
 
     end = time.time_ns()
