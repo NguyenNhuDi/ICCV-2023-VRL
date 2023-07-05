@@ -173,6 +173,7 @@ class WeedAndCropDataset:
 
         self.run_amount = math.ceil(total_size / batch_size) + num_processes
         self.full_batches = (total_size // batch_size) * batch_size
+        self.left_over = total_size - self.full_batches
         self.max_queue_size = total_size // batch_size + 1
 
     def __populate_path_queue__(self):
@@ -183,13 +184,21 @@ class WeedAndCropDataset:
             self.image_dir = self.image_dir[shuffler]
             self.mask_dir = self.mask_dir[shuffler]
 
+            if counter >= self.full_batches:
+                for __ in range(self.num_processes - 1):
+                    self.path_queue.put((None, None))
+
+                for j in range(1, self.left_over):
+                    self.path_queue.put((self.image_dir[-j], self.mask_dir[-j]))
+
+                break
+
             for j in range(len(self.image_dir)):
                 self.path_queue.put((self.image_dir[j], self.mask_dir[j]))
                 counter += 1
 
         # adding sentinel values so that the consumer can terminate
-        for i in range(self.num_processes):
-            self.path_queue.put((None, None))
+        self.path_queue.put((None, None))
 
     """
     Consumer process of __populate_path_queue__
