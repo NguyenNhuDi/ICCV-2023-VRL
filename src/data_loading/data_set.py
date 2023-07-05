@@ -1,3 +1,4 @@
+import math
 import multiprocessing as mp
 import numpy as np
 import queue
@@ -6,6 +7,7 @@ import glob
 import torch
 from torch.utils.data import Dataset
 import cv2
+import albumentations as A
 
 """NOTE in the documentation transforms and augmented are used interchangeably"""
 
@@ -127,13 +129,15 @@ Methods
 """
 
 
-class WeedAndCropDataset(Dataset):
+class WeedAndCropDataset:
 
     def __init__(self, image_dir,
                  mask_dir,
+                 batch_size=1,
                  epochs=1,
+                 num_processes=1,
                  transform=None,
-                 num_processes=1):
+                 ):
 
         # storing parameters
         self.image_dir = np.array(glob.glob(f'{image_dir}/*.png'))
@@ -141,6 +145,7 @@ class WeedAndCropDataset(Dataset):
         self.epochs = epochs
         self.transform = transform
         self.num_processes = num_processes
+        self.batch_size = batch_size
 
         # defining the joinable queues
         self.path_queue = mp.JoinableQueue()
@@ -209,7 +214,7 @@ class WeedAndCropDataset(Dataset):
                 mask = augmented['mask']
 
             # converting the image and mask into tensors
-            image = torch.from_numpy(image)
+            image = torch.from_numpy(image).permute(2, 1, 0)
             mask = torch.from_numpy(mask).unsqueeze(0)
 
             # putting the image and mask into a queue
@@ -249,26 +254,86 @@ class WeedAndCropDataset(Dataset):
 
         self.image_mask_queue.join()
 
-    """DEFAULT METHODS FOR DATASET"""
+    """
+                            SINGLE THREADED BELOW
+    ________________________________________________________________________
+    """
 
+    # create batch method
     def __len__(self):
         return len(self.image_dir)
 
-    def __getitem__(self, index):
-        try:
-            image, mask = self.image_mask_queue.get()
-            self.image_mask_queue.task_done()
+    def get_item(self):
 
-            self.accessed += 1
+        assert self.accessed < self.max_queue_size, f'Image and Mask queue is empty!\nAll Images and Masks have been ' \
+                                                    f'returned already'
 
-            # if the none counter is the same amount of processes this means that all processes eof is reached
-            # deploy the None into command queue to terminate them
-            # this is essential in stopping NO FILE found error
-            if self.accessed == self.max_queue_size:
-                for i in range(self.num_processes):
-                    self.command_queue.put(None)
+        image_batch, mask_batch = [], []
+        for i in range(self.batch_size):
+            try:
+                image, mask = self.image_mask_queue.get()
+                image_batch.append(image)
+                mask_batch.append(mask)
 
-            return image, mask
-        except queue.Empty:
-            time.sleep(0.2)  # wait a bit before trying again
-            return self.__getitem__(index)
+                self.image_mask_queue.task_done()
+                self.accessed += 1
+
+                # if the none counter is the same amount of processes this means that all processes eof is reached
+                # deploy the None into command queue to terminate them
+                # this is essential in stopping NO FILE found error
+
+                if self.accessed == self.max_queue_size:
+                    for j in range(self.num_processes):
+                        self.command_queue.put(None)
+                    break
+
+            except queue.Empty:
+                time.sleep(0.01)
+                i -= 1
+                continue
+
+        # converting to np arr
+        # image_batch = np.array(image_batch)
+        # mask_batch = np.array(mask_batch)
+
+        out_image_batch = torch.stack(image_batch, dim=0)
+        out_mask_batch = torch.stack(mask_batch, dim=0)
+
+        return out_image_batch, out_mask_batch
+
+
+if __name__ == '__main__':
+    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
+    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
+
+    transform = A.Compose([
+        A.Resize(256, 256),
+        A.HorizontalFlip(p=0.5),
+        A.VerticalFlip(p=0.5),
+        A.RandomRotate90(p=0.5),
+        A.HueSaturationValue()
+    ])
+
+    epochs = 50
+    num_processes = 6
+    batch_size = 10
+
+    test_dataset = WeedAndCropDataset(image_path,
+                                      mask_path,
+                                      batch_size=batch_size,
+                                      epochs=epochs,
+                                      num_processes=num_processes,
+                                      transform=transform)
+    test_dataset.start()
+
+    start = time.time_ns()
+
+    for i in range(math.ceil(epochs * test_dataset.__len__() / batch_size)):
+        image, mask = test_dataset.get_item()
+        # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
+
+    end = time.time_ns()
+
+    test_dataset.join()
+
+    print(end - start)
