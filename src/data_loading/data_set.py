@@ -128,7 +128,7 @@ Methods
 """
 
 
-class WeedAndCropDataset():
+class WeedAndCropDataset:
 
     def __init__(self, image_dir,
                  mask_dir,
@@ -136,7 +136,7 @@ class WeedAndCropDataset():
                  epochs=1,
                  num_processes=1,
                  transform=None,
-                ):
+                 ):
 
         # storing parameters
         self.image_dir = np.array(glob.glob(f'{image_dir}/*.png'))
@@ -253,22 +253,19 @@ class WeedAndCropDataset():
 
         self.image_mask_queue.join()
 
-
     """
                             SINGLE THREADED BELOW
     ________________________________________________________________________
     """
 
     # create batch method
-
-
     def __len__(self):
         return len(self.image_dir)
 
-
     def get_item(self):
-        
-        assert self.accessed < self.max_queue_size, f'Image and Mask queue is empty!\nAll Images and Masks have been returned already'
+
+        assert self.accessed < self.max_queue_size, f'Image and Mask queue is empty!\nAll Images and Masks have been ' \
+                                                    f'returned already'
 
         image_batch, mask_batch = [], []
         for i in range(self.batch_size):
@@ -279,7 +276,6 @@ class WeedAndCropDataset():
                 self.image_mask_queue.task_done()
                 self.accessed += 1
 
-
                 # if the none counter is the same amount of processes this means that all processes eof is reached
                 # deploy the None into command queue to terminate them
                 # this is essential in stopping NO FILE found error
@@ -288,7 +284,6 @@ class WeedAndCropDataset():
                     for i in range(self.num_processes):
                         self.command_queue.put(None)
                     break
-                        
 
             except queue.Empty:
                 time.sleep(0.2)
@@ -300,9 +295,9 @@ class WeedAndCropDataset():
 
         return image_batch, mask_batch
 
+
 image_path = r'/home/adeebhossain/Documents/Datasets/SMH SMH-20230705T155215Z-001/SMH SMH/image'
 mask_path = r'/home/adeebhossain/Documents/Datasets/SMH SMH-20230705T155215Z-001/SMH SMH/mask'
-
 
 transform = A.Compose([
     A.Resize(1024, 1024),
