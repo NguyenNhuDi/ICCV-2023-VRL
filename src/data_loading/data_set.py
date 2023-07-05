@@ -278,3 +278,39 @@ class WeedAndCropDataset(Dataset):
         except queue.Empty:
             time.sleep(0.2)  # wait a bit before trying again
             return self.__getitem__(index)
+
+if __name__ == '__main__':
+    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
+    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
+
+    transform = A.Compose([
+        A.Resize(256, 256),
+        A.HorizontalFlip(p=0.5),
+        A.VerticalFlip(p=0.5),
+        A.RandomRotate90(p=0.5),
+        A.HueSaturationValue()
+    ])
+
+    epochs = 50
+    num_processes = 6
+    batch_size = 10
+
+    test_dataset = WeedAndCropDataset(image_path,
+                                      mask_path,
+                                      batch_size=batch_size,
+                                      epochs=epochs,
+                                      num_processes=num_processes,
+                                      transform=transform)
+    test_dataset.start()
+
+    start = time.time_ns()
+
+    for i in range(math.ceil(epochs * test_dataset.__len__() / batch_size)):
+        image, mask = test_dataset.get_item()
+        # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
+
+    end = time.time_ns()
+
+    test_dataset.join()
+
+    print(end - start)
