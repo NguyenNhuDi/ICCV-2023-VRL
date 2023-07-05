@@ -6,6 +6,7 @@ import glob
 import torch
 from torch.utils.data import Dataset
 import cv2
+import albumentations as A
 
 """NOTE in the documentation transforms and augmented are used interchangeably"""
 
@@ -127,13 +128,15 @@ Methods
 """
 
 
-class WeedAndCropDataset(Dataset):
+class WeedAndCropDataset():
 
     def __init__(self, image_dir,
                  mask_dir,
+                 batch_size=1,
                  epochs=1,
+                 num_processes=1,
                  transform=None,
-                 num_processes=1):
+                ):
 
         # storing parameters
         self.image_dir = np.array(glob.glob(f'{image_dir}/*.png'))
@@ -141,6 +144,7 @@ class WeedAndCropDataset(Dataset):
         self.epochs = epochs
         self.transform = transform
         self.num_processes = num_processes
+        self.batch_size = batch_size
 
         # defining the joinable queues
         self.path_queue = mp.JoinableQueue()
@@ -249,37 +253,77 @@ class WeedAndCropDataset(Dataset):
 
         self.image_mask_queue.join()
 
-    """DEFAULT METHODS FOR DATASET"""
+
+    """
+                            SINGLE THREADED BELOW
+    ________________________________________________________________________
+    """
+
+    # create batch method
+
 
     def __len__(self):
         return len(self.image_dir)
 
-    def __getitem__(self, index):
-        try:
-            image, mask = self.image_mask_queue.get()
-            self.image_mask_queue.task_done()
 
-            self.accessed += 1
+    def get_item(self):
+        
+        assert self.accessed < self.max_queue_size, f'Image and Mask queue is empty!\nAll Images and Masks have been returned already'
 
-            # if the none counter is the same amount of processes this means that all processes eof is reached
-            # deploy the None into command queue to terminate them
-            # this is essential in stopping NO FILE found error
-            if self.accessed == self.max_queue_size:
-                for i in range(self.num_processes):
-                    self.command_queue.put(None)
+        image_batch, mask_batch = [], []
+        for i in range(self.batch_size):
+            try:
+                image, mask = self.image_mask_queue.get()
+                image_batch.append(image)
+                mask_batch.append(mask)
+                self.image_mask_queue.task_done()
+                self.accessed += 1
 
-            return image, mask
-        except queue.Empty:
-            time.sleep(0.2)  # wait a bit before trying again
-            return self.__getitem__(index)
-            
-def batch(self, size):
-    image_batch, mask_batch = [], []
-    for i in range(int(size)):
-        image, mask = self.image_mask_queue.get()
-        image_batch.append(image)
-        mask_batch.append(mask)
-        self.image_mask_queue.taskdone()
-    image_batch = torch.stack(image_batch, axis=0)
-    mask_batch = torch.stack(mask_batch, axis=0)
-    return image_batch, mask_batch
+
+                # if the none counter is the same amount of processes this means that all processes eof is reached
+                # deploy the None into command queue to terminate them
+                # this is essential in stopping NO FILE found error
+
+                if self.accessed == self.max_queue_size:
+                    for i in range(self.num_processes):
+                        self.command_queue.put(None)
+                    break
+                        
+
+            except queue.Empty:
+                time.sleep(0.2)
+                i -= 1
+                continue
+
+        image_batch = torch.tensor(image_batch).type(torch.float32)
+        mask_batch = torch.tensort(mask_batch).type(torch.float32)
+
+        return image_batch, mask_batch
+
+image_path = r'/home/adeebhossain/Documents/Datasets/SMH SMH-20230705T155215Z-001/SMH SMH/image'
+mask_path = r'/home/adeebhossain/Documents/Datasets/SMH SMH-20230705T155215Z-001/SMH SMH/mask'
+
+
+transform = A.Compose([
+    A.Resize(1024, 1024),
+    A.HorizontalFlip(p=0.5),
+    A.VerticalFlip(p=0.5),
+    A.RandomRotate90(p=0.5),
+    A.HueSaturationValue()
+])
+
+epochs = 15
+num_processes = 3
+
+test_dataset = WeedAndCropDataset(image_path,
+                                  mask_path,
+                                  batch_size=10,
+                                  epochs=epochs,
+                                  num_processes=num_processes,
+                                  transform=transform)
+test_dataset.start()
+
+time.sleep(4)
+
+print(test_dataset.path_queue.qsize())
+print(test_dataset.image_mask_queue.qsize())
