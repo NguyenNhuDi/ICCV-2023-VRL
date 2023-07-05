@@ -1,3 +1,4 @@
+import math
 import multiprocessing as mp
 import numpy as np
 import queue
@@ -213,7 +214,7 @@ class WeedAndCropDataset:
                 mask = augmented['mask']
 
             # converting the image and mask into tensors
-            image = torch.from_numpy(image)
+            image = torch.from_numpy(image).permute(2, 1, 0)
             mask = torch.from_numpy(mask).unsqueeze(0)
 
             # putting the image and mask into a queue
@@ -273,6 +274,7 @@ class WeedAndCropDataset:
                 image, mask = self.image_mask_queue.get()
                 image_batch.append(image)
                 mask_batch.append(mask)
+
                 self.image_mask_queue.task_done()
                 self.accessed += 1
 
@@ -281,44 +283,57 @@ class WeedAndCropDataset:
                 # this is essential in stopping NO FILE found error
 
                 if self.accessed == self.max_queue_size:
-                    for i in range(self.num_processes):
+                    for j in range(self.num_processes):
                         self.command_queue.put(None)
                     break
 
             except queue.Empty:
-                time.sleep(0.2)
+                time.sleep(0.01)
                 i -= 1
                 continue
 
-        image_batch = torch.tensor(image_batch).type(torch.float32)
-        mask_batch = torch.tensort(mask_batch).type(torch.float32)
+        # converting to np arr
+        # image_batch = np.array(image_batch)
+        # mask_batch = np.array(mask_batch)
 
-        return image_batch, mask_batch
+        out_image_batch = torch.stack(image_batch, dim=0)
+        out_mask_batch = torch.stack(mask_batch, dim=0)
+
+        return out_image_batch, out_mask_batch
 
 
-image_path = r'/home/adeebhossain/Documents/Datasets/SMH SMH-20230705T155215Z-001/SMH SMH/image'
-mask_path = r'/home/adeebhossain/Documents/Datasets/SMH SMH-20230705T155215Z-001/SMH SMH/mask'
+if __name__ == '__main__':
+    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
+    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
 
-transform = A.Compose([
-    A.Resize(1024, 1024),
-    A.HorizontalFlip(p=0.5),
-    A.VerticalFlip(p=0.5),
-    A.RandomRotate90(p=0.5),
-    A.HueSaturationValue()
-])
+    transform = A.Compose([
+        A.Resize(256, 256),
+        A.HorizontalFlip(p=0.5),
+        A.VerticalFlip(p=0.5),
+        A.RandomRotate90(p=0.5),
+        A.HueSaturationValue()
+    ])
 
-epochs = 15
-num_processes = 3
+    epochs = 50
+    num_processes = 6
+    batch_size = 10
 
-test_dataset = WeedAndCropDataset(image_path,
-                                  mask_path,
-                                  batch_size=10,
-                                  epochs=epochs,
-                                  num_processes=num_processes,
-                                  transform=transform)
-test_dataset.start()
+    test_dataset = WeedAndCropDataset(image_path,
+                                      mask_path,
+                                      batch_size=batch_size,
+                                      epochs=epochs,
+                                      num_processes=num_processes,
+                                      transform=transform)
+    test_dataset.start()
 
-time.sleep(4)
+    start = time.time_ns()
 
-print(test_dataset.path_queue.qsize())
-print(test_dataset.image_mask_queue.qsize())
+    for i in range(math.ceil(epochs * test_dataset.__len__() / batch_size)):
+        image, mask = test_dataset.get_item()
+        # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
+
+    end = time.time_ns()
+
+    test_dataset.join()
+
+    print(end - start)
