@@ -5,7 +5,6 @@ import queue
 import time
 import glob
 import torch
-from torch.utils.data import Dataset
 import cv2
 import albumentations as A
 
@@ -33,23 +32,37 @@ Attributes
     num_processes : int
         the number of processes that the dataset will use
         
-    path_queue : JoinableQueue
-        the queue that will hold all the paths to the individual images and mask
-        the item in the queue is stored as a tuple with the format (image_path, mask_path)
-        it will hold epoch * images amount of item
+    batch_size : int
+        the size of the batches
+        
+    index_queue : JoinableQueue
+        the queue that will hold all the indexes to the different paths in batches
     
     image_mask_queue : JoinableQueue
         the queue that will hold all the augmented images and mask
-        the item in the queue is stored as a tuple with the format (augmented_image, augmented_mask)
-        it will hold a maximum (epoch * images) + num_processes amount of item
+        the item in the queue is stored as a tuple with the format (image_batch, mask_batch)
         
     command_queue : JoinableQueue
         the queue that will determines when the transformation processes will end
         the item in the queue will only ever be None
         and it will hold a maximum num_processes amount of item
         
+    index_arr : np.array
+        an array that holds the indexes to the paths, this array will be shuffled to 
+        simulate randomness
+        
     read_transform_processes : List[process]
         the list that holds all the processes that will read and transform the images and mask
+        
+    accessed : int
+        counter that is used in get_item to tell when image_mask_queue is empty
+        
+    total_size : int
+        the total amount of images and masks that will be processed (epoch * number of images/masks)
+    
+    num_batches : int
+        total number of batches
+    
         
 Methods
  ----------------------------------------------------------------
@@ -65,41 +78,66 @@ Methods
                 
             mask_dir : str
                 the absolute path to the directory containing the masks
+            
+            batch_size : int, optional
+                the size of the batches
+                default is 1
                 
             epochs : int, optional
                 the number of epochs the model will be trained with
+                default is 1
+                
+            num_processes : int, optional
+                the number of processes
                 default is 1
                 
             transform : optional
                 the transformation function that will augment the images and masks
                 default is None
                 
-            num_processes : int, optional
-                the number of processes
-                default is 1
+
     
-    __populate_path_queue__ : None
-        populate the path_queue with the image and mask path in a random order
+    __populate_index_queue__ : None
+        populate the index queue with bathes of indexes in random order
         
         parameters:
             None
         
-    __read_transform_image_mask__ : None
-        read the image and mask and augment them. The result will be enqueued onto image_mask_queue
+    __read_transform_image_mask__ : tensor, tensor
+        read the image and mask and augment them. 
+        the augmented image and mask will be returned as tensors
         
         parameters:
-            index_queue : JoinableQueue
-                the queue containing all the paths
+            image_path : str
+                the absolute path to the image that is being augmented
+            mask_path : str
+                the absolute path to the mask that is being augmented
+            transform : function
+                the transformation function that will transform the mask and image
+    
+    __batch_image_mask__ : None
+        put images and masks in a batch and enqueue it into image_mask_queue
+        
+        parameters:
+            image_paths : np.array
+                the array holding all the image paths
             
-            image_mask_queue : JoinableQueue
-                the output queue holding all transformed images and masks
+            mask_paths : np.array
+                the array holding all the mask paths
             
-            command_queue : JoinableQueue
-                the queue that will define when this method will terminate
+            index_queue : mp.JoinableQueue
+                the queue holding all the indexes
             
-            transform : optional
-                the transformation function that will be applied to the images and masks
-                default is None
+            image_mask_queue : mp.JoinableQueue
+                the output queue where the augmented image batch and mask batch 
+                will be enqueued into
+                
+            command_queue : mp.JoinableQueue
+                the queue that will determine when the process running this method
+                will terminate
+            
+            transform : function
+                the transformation function that will augment the image and mask
                 
     start : None
         start the processes
@@ -119,13 +157,11 @@ Methods
         parameters:
             None
     
-    __getitem__ : tensor, tensor
-        return the image and mask that is in front of image_mask_queue
+    get_item : tensor, tensor
+        return the image and mask batch that is in front of image_mask_queue
         
         parameters:
-            index : int
-                following torch Dataset structure this function must have an index parameter
-                however it will be ignored completely
+            None 
 """
 
 
@@ -138,6 +174,10 @@ class WeedAndCropDataset:
                  num_processes=1,
                  transform=None,
                  ):
+
+        assert batch_size >= 1, 'The batch size entered is <= 0'
+        assert epochs >= 1, 'The epochs entered is <= 0'
+        assert num_processes >= 1, 'The number of processes entered is <= 0'
 
         # storing parameters
         self.image_dir = np.array(glob.glob(f'{image_dir}/*.png'))
@@ -174,7 +214,7 @@ class WeedAndCropDataset:
         self.accessed = 0
 
         # variable to use when running training loop
-        self.run_amount = math.ceil(self.total_size / self.batch_size)
+        self.num_batches = math.ceil(self.total_size / self.batch_size)
 
     def __populate_index_queue__(self):
         # Does the first epoch - 1 times
@@ -313,7 +353,7 @@ class WeedAndCropDataset:
             # if the none counter is the same amount of processes this means that all processes eof is reached
             # deploy the None into command queue to terminate them
             # this is essential in stopping NO FILE found error
-            if self.accessed == self.run_amount:
+            if self.accessed == self.num_batches:
                 for j in range(self.num_processes):
                     self.command_queue.put(None)
             return image, mask
@@ -353,7 +393,7 @@ if __name__ == '__main__':
     print("starting finished\nbegin testing...")
 
     start = time.time_ns()
-    for i in range(test_dataset.run_amount):
+    for i in range(test_dataset.num_batches):
         image, mask = test_dataset.get_item()
         print(f'Iteration: {i}, shape: {image.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
         # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
