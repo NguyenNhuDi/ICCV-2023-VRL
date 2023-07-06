@@ -173,6 +173,9 @@ class WeedAndCropDataset:
         # counter to tell when the processes terminate
         self.accessed = 0
 
+        # variable to use when running training loop
+        self.run_amount = math.ceil(self.total_size / self.batch_size)
+
     def __populate_index_queue__(self):
         # Does the first epoch - 1 times
 
@@ -232,7 +235,7 @@ class WeedAndCropDataset:
     """
 
     @staticmethod
-    def __batch_image_mask__(image_paths: np.arry,
+    def __batch_image_mask__(image_paths: np.array,
                              mask_paths: np.array,
                              index_queue: mp.JoinableQueue,
                              image_mask_queue: mp.JoinableQueue,
@@ -260,16 +263,16 @@ class WeedAndCropDataset:
             mask_batch = torch.stack(mask_batch, dim=0)
             image_mask_queue.put((image_batch, mask_batch))
 
-            # Waiting for get_item to be finished with the queue
-            while True:
-                try:
-                    sent_val = command_queue.get()
-                    if sent_val is None:
-                        command_queue.task_done()
-                        break
-                except queue.Empty:
-                    time.sleep(0.5)
-                    continue
+        # Waiting for get_item to be finished with the queue
+        while True:
+            try:
+                sent_val = command_queue.get()
+                if sent_val is None:
+                    command_queue.task_done()
+                    break
+            except queue.Empty:
+                time.sleep(0.5)
+                continue
 
     """
     Populate queue path and initialize the processes
@@ -278,8 +281,8 @@ class WeedAndCropDataset:
     def start(self):
         self.__populate_index_queue__()
 
-        # for process in self.read_transform_processes:
-        #     process.start()
+        for process in self.read_transform_processes:
+            process.start()
 
     """
     Join the processes and terminates them
@@ -310,8 +313,7 @@ class WeedAndCropDataset:
             # if the none counter is the same amount of processes this means that all processes eof is reached
             # deploy the None into command queue to terminate them
             # this is essential in stopping NO FILE found error
-
-            if self.accessed == self.max_queue_size:
+            if self.accessed == self.run_amount:
                 for j in range(self.num_processes):
                     self.command_queue.put(None)
             return image, mask
@@ -324,7 +326,6 @@ class WeedAndCropDataset:
 if __name__ == '__main__':
     # image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
     # mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
-
     image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\images'
     mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\leaf_instances'
 
@@ -346,22 +347,16 @@ if __name__ == '__main__':
                                       epochs=epochs,
                                       num_processes=num_processes,
                                       transform=transform)
+    print('starting....')
     test_dataset.start()
 
+    print("starting finished\nbegin testing...")
+
     start = time.time_ns()
-
-    while test_dataset.index_queue.qsize() > 0:
-        out = test_dataset.index_queue.get()
-        if out is None:
-            print(None)
-        else:
-            print(out)
-            print(len(out))
-
-    # for i in range(test_dataset.max_queue_size):
-    #     image, mask = test_dataset.get_item()
-    #     print(f'Iteration: {i}, shape: {image.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
-    #     # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
+    for i in range(test_dataset.run_amount):
+        image, mask = test_dataset.get_item()
+        print(f'Iteration: {i}, shape: {image.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
+        # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
 
     end = time.time_ns()
 
