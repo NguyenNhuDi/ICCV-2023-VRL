@@ -314,7 +314,7 @@ if __name__ == '__main__':
         A.HueSaturationValue()
     ])
 
-    epochs = 50
+    epochs = 5
     num_processes = 6
     batch_size = 10
 
