@@ -88,7 +88,7 @@ Methods
         read the image and mask and augment them. The result will be enqueued onto image_mask_queue
         
         parameters:
-            path_queue : JoinableQueue
+            index_queue : JoinableQueue
                 the queue containing all the paths
             
             image_mask_queue : JoinableQueue
@@ -148,7 +148,7 @@ class WeedAndCropDataset:
         self.batch_size = batch_size
 
         # defining the joinable queues
-        self.path_queue = mp.JoinableQueue()
+        self.index_queue = mp.JoinableQueue()
         self.image_mask_queue = mp.JoinableQueue()
         self.command_queue = mp.JoinableQueue()
 
@@ -160,19 +160,20 @@ class WeedAndCropDataset:
         # defining the processes
         self.read_transform_processes = []
 
-        # for _ in range(num_processes):
-        #     proc = mp.Process(target=WeedAndCropDataset.__batch_image_mask__,
-        #                       args=(self.path_queue,
-        #                             self.image_mask_queue,
-        #                             self.command_queue,
-        #                             self.process_run_amount,
-        #                             self.batch_size))
-        #     self.read_transform_processes.append(proc)
+        for _ in range(num_processes):
+            proc = mp.Process(target=WeedAndCropDataset.__batch_image_mask__,
+                              args=(self.image_dir,
+                                    self.mask_dir,
+                                    self.index_queue,
+                                    self.image_mask_queue,
+                                    self.command_queue,
+                                    self.transform))
+            self.read_transform_processes.append(proc)
 
         # counter to tell when the processes terminate
         self.accessed = 0
 
-    def __populate_path_queue__(self):
+    def __populate_index_queue__(self):
         # Does the first epoch - 1 times
 
         index_batch = []
@@ -188,7 +189,7 @@ class WeedAndCropDataset:
 
             if total_counter == self.total_size:
                 if len(index_batch) > 0:
-                    self.path_queue.put(index_batch)
+                    self.index_queue.put(index_batch)
                 break
 
             index_batch.append(self.index_arr[index_counter])
@@ -197,102 +198,85 @@ class WeedAndCropDataset:
             batch_counter += 1
 
             if batch_counter == self.batch_size:
-                self.path_queue.put(index_batch)
+                self.index_queue.put(index_batch)
                 index_batch = []
                 batch_counter = 0
 
-
-
         for _ in range(self.num_processes):
-            self.path_queue.put(None)
+            self.index_queue.put(None)
 
-    # @staticmethod
-    # def __read_transform_image_mask__(image_path, mask_path, transform=None):
-    #     image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
-    #     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-    #
-    #     # converting the type of number from int to float and turn the pixels into the range [0,1]
-    #     image = np.array(image, dtype=np.float32) / 255.0
-    #     mask = np.array(mask, dtype=np.float32) / 255.0
-    #
-    #     # applying the transformations
-    #     if transform is not None:
-    #         augmented = transform(image=image, mask=mask)
-    #         image = augmented['image']
-    #         mask = augmented['mask']
-    #
-    #     # converting the image and mask into tensors
-    #     image = torch.from_numpy(image).permute(2, 1, 0)
-    #     mask = torch.from_numpy(mask).unsqueeze(0)
-    #
-    #     return image, mask
-    #
-    #     # telling the queue the task is done
-    #
-    # """
-    # Consumer process of __populate_path_queue__
-    # Producer process to __getitem__
-    # """
-    #
-    # @staticmethod
-    # def __batch_image_mask__(path_queue: mp.JoinableQueue,
-    #                          image_mask_queue: mp.JoinableQueue,
-    #                          command_queue: mp.JoinableQueue,
-    #                          process_run_amount=1,
-    #                          batch_size=1):
-    #
-    #     for _ in range(process_run_amount):
-    #
-    #         image_batch, mask_batch = [], []
-    #         for i in range(batch_size):
-    #             image_path, mask_path = path_queue.get()
-    #
-    #             image, mask = WeedAndCropDataset.__read_transform_image_mask__(image_path, mask_path)
-    #
-    #             image_batch.append(image)
-    #             mask_batch.append(image)
-    #
-    #             path_queue.task_done()
-    #         image_batch = torch.stack(image_batch, dim=0)
-    #         mask_batch = torch.stack(mask_batch, dim=0)
-    #
-    #         image_mask_queue.put((image_batch, mask_batch))
-    #
-    #     image_batch, mask_batch = [], []
-    #     while True:
-    #         image_path, mask_path = path_queue.get()
-    #         path_queue.task_done()
-    #
-    #         if image_path is None or mask_path is None:
-    #             print('dead', flush=True)
-    #             if len(image_batch) > 0:
-    #                 print('entered bigger')
-    #                 image_batch = torch.stack(image_batch, dim=0)
-    #                 mask_batch = torch.stack(mask_batch, dim=0)
-    #                 image_mask_queue.put((image_batch, mask_batch))
-    #             break
-    #
-    #         image, mask = WeedAndCropDataset.__read_transform_image_mask__(image_path, mask_path)
-    #         image_batch.append(image)
-    #         mask_batch.append(image)
-    #
-    #     # Waiting for get_item to be finished with the queue
-    #     while True:
-    #         try:
-    #             out = command_queue.get()
-    #             if out is None:
-    #                 command_queue.task_done()
-    #                 break
-    #         except queue.Empty:
-    #             time.sleep(0.5)
-    #             continue
-    #
-    # """
-    # Populate queue path and initialize the processes
-    # """
+    @staticmethod
+    def __read_transform_image_mask__(image_path, mask_path, transform=None):
+        image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
+        mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+
+        # converting the type of number from int to float and turn the pixels into the range [0,1]
+        image = np.array(image, dtype=np.float32) / 255.0
+        mask = np.array(mask, dtype=np.float32) / 255.0
+
+        # applying the transformations
+        if transform is not None:
+            augmented = transform(image=image, mask=mask)
+            image = augmented['image']
+            mask = augmented['mask']
+
+        # converting the image and mask into tensors
+        image = torch.from_numpy(image).permute(2, 1, 0)
+        mask = torch.from_numpy(mask).unsqueeze(0)
+
+        return image, mask
+
+    """
+    Consumer process of __populate_index_queue__
+    Producer process to __getitem__
+    """
+
+    @staticmethod
+    def __batch_image_mask__(image_paths: np.arry,
+                             mask_paths: np.array,
+                             index_queue: mp.JoinableQueue,
+                             image_mask_queue: mp.JoinableQueue,
+                             command_queue: mp.JoinableQueue,
+                             transform=None):
+        while True:
+            indexes = index_queue.get()
+            index_queue.task_done()
+
+            if indexes is None:
+                break
+
+            image_batch = []
+            mask_batch = []
+            for index in indexes:
+                image = image_paths[index]
+                mask = mask_paths[index]
+
+                image, mask = WeedAndCropDataset.__read_transform_image_mask__(image, mask, transform)
+
+                image_batch.append(image)
+                mask_batch.append(mask)
+
+            image_batch = torch.stack(image_batch, dim=0)
+            mask_batch = torch.stack(mask_batch, dim=0)
+            image_mask_queue.put((image_batch, mask_batch))
+
+            # Waiting for get_item to be finished with the queue
+            while True:
+                try:
+                    sent_val = command_queue.get()
+                    if sent_val is None:
+                        command_queue.task_done()
+                        break
+                except queue.Empty:
+                    time.sleep(0.5)
+                    continue
+
+    """
+    Populate queue path and initialize the processes
+    """
 
     def start(self):
-        self.__populate_path_queue__()
+        self.__populate_index_queue__()
 
         # for process in self.read_transform_processes:
         #     process.start()
@@ -338,8 +322,11 @@ class WeedAndCropDataset:
 
 
 if __name__ == '__main__':
-    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
-    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
+    # image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
+    # mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
+
+    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\images'
+    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\leaf_instances'
 
     transform = A.Compose([
         A.Resize(256, 256),
@@ -363,8 +350,8 @@ if __name__ == '__main__':
 
     start = time.time_ns()
 
-    while test_dataset.path_queue.qsize() > 0:
-        out = test_dataset.path_queue.get()
+    while test_dataset.index_queue.qsize() > 0:
+        out = test_dataset.index_queue.get()
         if out is None:
             print(None)
         else:
