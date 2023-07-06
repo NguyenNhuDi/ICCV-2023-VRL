@@ -157,11 +157,13 @@ class WeedAndCropDataset:
 
         total_size = self.epochs * self.__len__()
 
-        self.run_amount = math.ceil(total_size / batch_size) + num_processes
+        self.max_queue_size = math.ceil(total_size // batch_size)
         self.full_batches = (total_size // batch_size) * batch_size
         self.process_run_amount = (total_size // batch_size) // num_processes
-        self.left_over = total_size - self.full_batches
-        self.max_queue_size = total_size // batch_size + 1
+        self.left_over = num_processes * batch_size
+
+
+        self.sleep_amount = 0
 
         # defining the processes
         self.read_transform_processes = []
@@ -172,35 +174,48 @@ class WeedAndCropDataset:
                                     self.image_mask_queue,
                                     self.command_queue,
                                     self.process_run_amount,
-                                    self.num_processes))
+                                    self.batch_size))
             self.read_transform_processes.append(proc)
 
         # counter to tell when the processes terminate
         self.accessed = 0
 
     def __populate_path_queue__(self):
+        # Does the first epoch - 1 times
+
         counter = 0
-        for i in range(self.epochs):
-            # shuffle the path array, so we can still get random order
-            shuffler = np.random.permutation(len(self.image_dir))
-            self.image_dir = self.image_dir[shuffler]
-            self.mask_dir = self.mask_dir[shuffler]
+        for i in range(self.num_processes):
+            for j in range(self.batch_size):
 
-            if counter >= self.full_batches:
-                for __ in range(self.num_processes - 1):
-                    self.path_queue.put((None, None))
+                if counter % len(self.image_dir) == 0:
+                    # shuffle the path array, so we can still get random order
+                    shuffler = np.random.permutation(len(self.image_dir))
+                    self.image_dir = self.image_dir[shuffler]
+                    self.mask_dir = self.mask_dir[shuffler]
 
-                for j in range(1, self.left_over):
-                    self.path_queue.put((self.image_dir[-j], self.mask_dir[-j]))
-
-                break
-
-            for j in range(len(self.image_dir)):
                 self.path_queue.put((self.image_dir[j], self.mask_dir[j]))
                 counter += 1
 
+        print(self.path_queue.qsize())
+
+
+        shuffler = np.random.permutation(len(self.image_dir))
+        self.image_dir = self.image_dir[shuffler]
+        self.mask_dir = self.mask_dir[shuffler]
+
+        for i in range(len(self.image_dir) - self.left_over):
+            self.path_queue.put((self.image_dir[i], self.mask_dir[i]))
+
+        for _ in range(self.num_processes - 1):
+            self.path_queue.put((None, None))
+
+        for i in range(1, self.left_over + 1):
+            self.path_queue.put((self.image_dir[-i], self.mask_dir[-i]))
+
         # adding sentinel values so that the consumer can terminate
         self.path_queue.put((None, None))
+
+        print(self.path_queue.qsize())
 
     @staticmethod
     def __read_transform_image_mask__(image_path, mask_path, transform=None):
@@ -234,10 +249,10 @@ class WeedAndCropDataset:
     def __batch_image_mask__(path_queue: mp.JoinableQueue,
                              image_mask_queue: mp.JoinableQueue,
                              command_queue: mp.JoinableQueue,
-                             run_amount=1,
+                             process_run_amount=1,
                              batch_size=1):
 
-        for _ in range(run_amount):
+        for _ in range(process_run_amount):
 
             image_batch, mask_batch = [], []
             for i in range(batch_size):
@@ -257,18 +272,21 @@ class WeedAndCropDataset:
         image_batch, mask_batch = [], []
         while True:
             image_path, mask_path = path_queue.get()
+            path_queue.task_done()
 
             if image_path is None or mask_path is None:
-                path_queue.task_done()
-                image_batch = torch.stack(image_batch, dim=0)
-                mask_batch = torch.stack(mask_batch, dim=0)
-                image_mask_queue.put((image_batch, mask_batch))
+                print('dead', flush=True)
+                if len(image_batch) > 0:
+                    print('entered bigger')
+                    image_batch = torch.stack(image_batch, dim=0)
+                    mask_batch = torch.stack(mask_batch, dim=0)
+                    image_mask_queue.put((image_batch, mask_batch))
                 break
 
             image, mask = WeedAndCropDataset.__read_transform_image_mask__(image_path, mask_path)
             image_batch.append(image)
             mask_batch.append(image)
-            path_queue.task_done()
+
 
         # Waiting for get_item to be finished with the queue
         while True:
@@ -312,46 +330,28 @@ class WeedAndCropDataset:
         return len(self.image_dir)
 
     def get_item(self):
+        try:
+            image, mask = self.image_mask_queue.get()
+            self.image_mask_queue.task_done()
+            self.accessed += 1
 
-        assert self.accessed < self.max_queue_size, f'Image and Mask queue is empty!\nAll Images and Masks have been ' \
-                                                    f'returned already'
+            # if the none counter is the same amount of processes this means that all processes eof is reached
+            # deploy the None into command queue to terminate them
+            # this is essential in stopping NO FILE found error
 
-        image_batch, mask_batch = [], []
-        for i in range(self.batch_size):
-            try:
-                image, mask = self.image_mask_queue.get()
-                image_batch.append(image)
-                mask_batch.append(mask)
+            if self.accessed == self.max_queue_size:
+                for j in range(self.num_processes):
+                    self.command_queue.put(None)
+            return image, mask
 
-                self.image_mask_queue.task_done()
-                self.accessed += 1
-
-                # if the none counter is the same amount of processes this means that all processes eof is reached
-                # deploy the None into command queue to terminate them
-                # this is essential in stopping NO FILE found error
-
-                if self.accessed == self.max_queue_size:
-                    for j in range(self.num_processes):
-                        self.command_queue.put(None)
-                    break
-
-            except queue.Empty:
-                time.sleep(0.01)
-                i -= 1
-
-        # converting to np arr
-        # image_batch = np.array(image_batch)
-        # mask_batch = np.array(mask_batch)
-
-        out_image_batch = torch.stack(image_batch, dim=0)
-        out_mask_batch = torch.stack(mask_batch, dim=0)
-
-        return out_image_batch, out_mask_batch
+        except queue.Empty:
+            time.sleep(0.01)
+            return self.get_item()
 
 
 if __name__ == '__main__':
-    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\images'
-    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\leaf_instances'
+    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
+    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
 
     transform = A.Compose([
         A.Resize(256, 256),
@@ -363,7 +363,7 @@ if __name__ == '__main__':
 
     epochs = 10
     num_processes = 6
-    batch_size = 32
+    batch_size = 7
 
     test_dataset = WeedAndCropDataset(image_path,
                                       mask_path,
@@ -375,7 +375,7 @@ if __name__ == '__main__':
 
     start = time.time_ns()
 
-    for i in range(math.ceil(epochs * test_dataset.__len__() / batch_size)):
+    for i in range(test_dataset.max_queue_size):
         image, mask = test_dataset.get_item()
         print(f'Iteration: {i}, shape: {image.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
         # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
