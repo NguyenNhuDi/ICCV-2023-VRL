@@ -8,7 +8,8 @@ import torch
 from torch.utils.data import Dataset
 import cv2
 import albumentations as A
-
+import cProfile
+import sys
 """NOTE in the documentation transforms and augmented are used interchangeably"""
 
 """
@@ -303,8 +304,12 @@ class WeedAndCropDataset:
 
 
 if __name__ == '__main__':
-    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
-    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
+
+    pr = cProfile.Profile()
+    pr.enable()
+
+    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\images'
+    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\leaf_instances'
 
     transform = A.Compose([
         A.Resize(256, 256),
@@ -337,3 +342,9 @@ if __name__ == '__main__':
     test_dataset.join()
 
     print(end - start)
+
+    pr.disable()
+
+    with open('profiling.txt', 'w') as sys.stdout:
+        pr.print_stats(sort='calls')
+
