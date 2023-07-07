@@ -391,8 +391,8 @@ class TorchTestDataset(Dataset):
         mask = np.array(mask, dtype=np.float32) / 255.0
 
         # applying the transformations
-        if transform is not None:
-            augmented = transform(image=image, mask=mask)
+        if self.transform is not None:
+            augmented = self.transform(image=image, mask=mask)
             image = augmented['image']
             mask = augmented['mask']
 
@@ -438,8 +438,9 @@ if __name__ == '__main__':
     print("starting finished\nbegin testing...")
 
     start = time.time_ns()
-    for i in tqdm(range(test_dataset.num_batches)):
+    for i in range(test_dataset.num_batches):
         image, mask = test_dataset.get_item()
+        print(f'Iteration: {i}, shape: {image.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
         # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
 
     end = time.time_ns()
@@ -450,9 +451,11 @@ if __name__ == '__main__':
 
     start = time.time_ns()
 
-    for i, data in enumerate(tqdm(torch_dataloader, 0)):
-        image, mask = data
-        # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
+    for j in range(epochs):
+        for i, data in enumerate(torch_dataloader):
+            image, mask = data
+            print(f'Iteration: {i}, shape: {image.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
+            # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
 
     end = time.time_ns()
     print(end - start)
