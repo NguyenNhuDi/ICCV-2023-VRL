@@ -1,11 +1,14 @@
 import math
 import multiprocessing as mp
+import os.path
+import pandas as pd
 import numpy as np
 import queue
 import time
 import glob
 import torch
 import cv2
+import albumentations as A
 
 """NOTE in the documentation transforms and augmented are used interchangeably"""
 
@@ -13,14 +16,18 @@ import cv2
 DSAL (Dataset and loader)
     This clas will transform and batch images/masks/labels for machine learning tasks
     To use this class, make sure to define a function that will read and transform your images/labels
-    this function should have the (image_dir, label_dir, transform) as parameters
+    this function should have the (image_dir, label_obj, transform) as parameters
+    
+    If DSAL is used for csv label reading, simply pass in the absolute path to the label csv into the
+    yml parameter slot
+    
 
 Attributes
 ----------------------------------------------------------------
     image_dir : np.array
         a numpy array holding all the path of the images
         
-    label_dir : np.array
+    yml : np.array
         a numpy array holding all the path of the masks
         
     read_and_transform_function : function
@@ -79,13 +86,13 @@ Methods
             image_dir : str
                 the absolute path to the directory containing the images
                 
-            label_dir : str
+            yml : str
                 the absolute path to the directory containing the masks
                 
             read_and_transform_function : function
                 the function that the user wrote to read a image and label path and
                 apply transformations to it. The parameters should be in the form
-                (image_dir, label_dir, transform). It should also return the transformed
+                (image_dir, yml, transform). It should also return the transformed
                 image and label
             
             batch_size : int, optional
@@ -177,7 +184,7 @@ Methods
 class DSAL:
 
     def __init__(self, image_dir,
-                 label_dir,
+                 yml,
                  read_and_transform_function,
                  batch_size=1,
                  epochs=1,
@@ -191,7 +198,10 @@ class DSAL:
 
         # storing parameters
         self.image_dir = np.array(glob.glob(f'{image_dir}/*.png'))
-        self.label_dir = np.array(glob.glob(f'{label_dir}/*.png'))
+
+        # check to see if this is a path to masks or label csv
+        self.yml = yml
+
         self.read_and_transform_function = read_and_transform_function
         self.epochs = epochs
         self.transform = transform
@@ -216,7 +226,7 @@ class DSAL:
             proc = mp.Process(target=self.__batch_image_mask__,
                               args=(self.read_and_transform_function,
                                     self.image_dir,
-                                    self.label_dir,
+                                    self.yml,
                                     self.index_queue,
                                     self.image_mask_queue,
                                     self.command_queue,
@@ -269,7 +279,7 @@ class DSAL:
     @staticmethod
     def __batch_image_mask__(read_and_transform_function,
                              image_paths: np.array,
-                             mask_paths: np.array,
+                             yml,
                              index_queue: mp.JoinableQueue,
                              image_mask_queue: mp.JoinableQueue,
                              command_queue: mp.JoinableQueue,
@@ -286,9 +296,12 @@ class DSAL:
 
             for index in indexes:
                 image = image_paths[index]
-                mask = mask_paths[index]
 
-                image, mask = read_and_transform_function(image, mask, transform)
+                image_name = os.path.basename(image)
+
+                label = yml[image_name]
+
+                image, mask = read_and_transform_function(image, label, transform)
 
                 image_batch.append(image)
                 mask_batch.append(mask)
@@ -378,7 +391,7 @@ def read_and_transform(image_path, mask_path, transform=None):
 
     return image, mask
 
-
+#
 # if __name__ == '__main__':
 #
 #     image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
@@ -415,7 +428,7 @@ def read_and_transform(image_path, mask_path, transform=None):
 #     start = time.time_ns()
 #     for i in range(test_dataset.num_batches):
 #         image, mask = test_dataset.get_item()
-#         print(f'Iteration: {i}, shape: {image.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
+#         print(f'Iteration: {i}, shape: {mask.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
 #         # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
 #
 #     end = time.time_ns()
