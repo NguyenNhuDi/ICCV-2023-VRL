@@ -11,16 +11,15 @@ import albumentations as A
 """NOTE in the documentation transforms and augmented are used interchangeably"""
 
 """
-Weed and Crop Dataset
-    The dataset responsible for loading and transforming images 
-    and masks for segmentation tasks
+DSAL (Dataset and loader)
+    This clas will transform and batch images/masks/labels for machine learning tasks
 
 Attributes
 ----------------------------------------------------------------
     image_dir : np.array
         a numpy array holding all the path of the images
         
-    mask_dir : np.array
+    label_dir : np.array
         a numpy array holding all the path of the masks
     
     epochs : int
@@ -76,7 +75,7 @@ Methods
             image_dir : str
                 the absolute path to the directory containing the images
                 
-            mask_dir : str
+            label_dir : str
                 the absolute path to the directory containing the masks
             
             batch_size : int, optional
@@ -165,10 +164,11 @@ Methods
 """
 
 
-class WeedAndCropDataset:
+class DSAL:
 
     def __init__(self, image_dir,
-                 mask_dir,
+                 label_dir,
+                 read_and_transform_function,
                  batch_size=1,
                  epochs=1,
                  num_processes=1,
@@ -181,7 +181,8 @@ class WeedAndCropDataset:
 
         # storing parameters
         self.image_dir = np.array(glob.glob(f'{image_dir}/*.png'))
-        self.mask_dir = np.array(glob.glob(f'{mask_dir}/*.png'))
+        self.label_dir = np.array(glob.glob(f'{label_dir}/*.png'))
+        self.read_and_transform_function = read_and_transform_function
         self.epochs = epochs
         self.transform = transform
         self.num_processes = num_processes
@@ -202,13 +203,13 @@ class WeedAndCropDataset:
         self.read_transform_processes = []
 
         for _ in range(num_processes):
-            proc = mp.Process(target=WeedAndCropDataset.__batch_image_mask__,
-                              args=(self.image_dir,
-                                    self.mask_dir,
+            proc = mp.Process(target=self.__batch_image_mask__,
+                              args=(self.read_and_transform_function,
+                                    self.image_dir,
+                                    self.label_dir,
                                     self.index_queue,
                                     self.image_mask_queue,
                                     self.command_queue,
-                                    self.max_queue_size,
                                     self.transform))
             self.read_transform_processes.append(proc)
 
@@ -250,34 +251,14 @@ class WeedAndCropDataset:
         for _ in range(self.num_processes):
             self.index_queue.put(None)
 
-    @staticmethod
-    def __read_transform_image_mask__(image_path, mask_path, transform=None):
-        image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-
-        # converting the type of number from int to float and turn the pixels into the range [0,1]
-        image = np.array(image, dtype=np.float32) / 255.0
-        mask = np.array(mask, dtype=np.float32) / 255.0
-
-        # applying the transformations
-        if transform is not None:
-            augmented = transform(image=image, mask=mask)
-            image = augmented['image']
-            mask = augmented['mask']
-
-        # converting the image and mask into tensors
-        image = torch.from_numpy(image).permute(2, 1, 0)
-        mask = torch.from_numpy(mask).unsqueeze(0)
-
-        return image, mask
-
     """
     Consumer process of __populate_index_queue__
     Producer process to __getitem__
     """
 
     @staticmethod
-    def __batch_image_mask__(image_paths: np.array,
+    def __batch_image_mask__(read_and_transform_function,
+                             image_paths: np.array,
                              mask_paths: np.array,
                              index_queue: mp.JoinableQueue,
                              image_mask_queue: mp.JoinableQueue,
@@ -297,7 +278,7 @@ class WeedAndCropDataset:
                 image = image_paths[index]
                 mask = mask_paths[index]
 
-                image, mask = WeedAndCropDataset.__read_transform_image_mask__(image, mask, transform)
+                image, mask = read_and_transform_function(image, mask, transform)
 
                 image_batch.append(image)
                 mask_batch.append(mask)
@@ -367,11 +348,33 @@ class WeedAndCropDataset:
             return self.get_item()
 
 
+def read_and_transform(image_path, mask_path, transform=None):
+    image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
+    mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+
+    # converting the type of number from int to float and turn the pixels into the range [0,1]
+    image = np.array(image, dtype=np.float32) / 255.0
+    mask = np.array(mask, dtype=np.float32) / 255.0
+
+    # applying the transformations
+    if transform is not None:
+        augmented = transform(image=image, mask=mask)
+        image = augmented['image']
+        mask = augmented['mask']
+
+    # converting the image and mask into tensors
+    image = torch.from_numpy(image).permute(2, 1, 0)
+    mask = torch.from_numpy(mask).unsqueeze(0)
+
+    return image, mask
+
+
 if __name__ == '__main__':
-    # image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
-    # mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
-    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\images'
-    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\leaf_instances'
+
+    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
+    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
+    # image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\images'
+    # mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\leaf_instances'
 
     transform = A.Compose([
         A.Resize(256, 256),
@@ -385,13 +388,14 @@ if __name__ == '__main__':
     num_processes = 6
     batch_size = 32
 
-    test_dataset = WeedAndCropDataset(image_path,
-                                      mask_path,
-                                      batch_size=batch_size,
-                                      epochs=epochs,
-                                      num_processes=num_processes,
-                                      max_queue_size=num_processes * 3,
-                                      transform=transform)
+    test_dataset = DSAL(image_path,
+                        mask_path,
+                        read_and_transform,
+                        batch_size=batch_size,
+                        epochs=epochs,
+                        num_processes=num_processes,
+                        max_queue_size=num_processes * 3,
+                        transform=transform)
 
     print('starting....')
     test_dataset.start()
