@@ -13,6 +13,8 @@ import albumentations as A
 """
 DSAL (Dataset and loader)
     This clas will transform and batch images/masks/labels for machine learning tasks
+    To use this class, make sure to define a function that will read and transform your images/labels
+    this function should have the (image_dir, label_dir, transform) as parameters
 
 Attributes
 ----------------------------------------------------------------
@@ -21,6 +23,9 @@ Attributes
         
     label_dir : np.array
         a numpy array holding all the path of the masks
+        
+    read_and_transform_function : function
+        this function will be used to read and transform the images/labels
     
     epochs : int
         the number of epochs the model will be trained with
@@ -77,6 +82,12 @@ Methods
                 
             label_dir : str
                 the absolute path to the directory containing the masks
+                
+            read_and_transform_function : function
+                the function that the user wrote to read a image and label path and
+                apply transformations to it. The parameters should be in the form
+                (image_dir, label_dir, transform). It should also return the transformed
+                image and label
             
             batch_size : int, optional
                 the size of the batches
