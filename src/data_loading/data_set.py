@@ -8,6 +8,11 @@ import torch
 import cv2
 import albumentations as A
 
+from torch.utils.data import Dataset
+from torch.utils.data.dataloader import DataLoader
+from tqdm import tqdm
+
+
 """NOTE in the documentation transforms and augmented are used interchangeably"""
 
 """
@@ -368,6 +373,36 @@ class WeedAndCropDataset:
             return self.get_item()
 
 
+class TorchTestDataset(Dataset):
+    def __init__(self, image_dir, mask_dir, transform=None):
+        self.image_dir = glob.glob(f'{image_dir}/*.png')
+        self.mask_dir = glob.glob(f'{mask_dir}/*.png')
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.image_dir)
+
+    def __getitem__(self, index):
+        image = cv2.imread(self.image_dir[index], cv2.COLOR_BGR2RGB)
+        mask = cv2.imread(self.mask_dir[index], cv2.IMREAD_GRAYSCALE)
+
+        # converting the type of number from int to float and turn the pixels into the range [0,1]
+        image = np.array(image, dtype=np.float32) / 255.0
+        mask = np.array(mask, dtype=np.float32) / 255.0
+
+        # applying the transformations
+        if transform is not None:
+            augmented = transform(image=image, mask=mask)
+            image = augmented['image']
+            mask = augmented['mask']
+
+        # converting the image and mask into tensors
+        image = torch.from_numpy(image).permute(2, 1, 0)
+        mask = torch.from_numpy(mask).unsqueeze(0)
+
+        return image, mask
+
+
 if __name__ == '__main__':
     # image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
     # mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
@@ -382,7 +417,7 @@ if __name__ == '__main__':
         A.HueSaturationValue()
     ])
 
-    epochs = 10
+    epochs = 4
     num_processes = 6
     batch_size = 32
 
@@ -393,15 +428,18 @@ if __name__ == '__main__':
                                       num_processes=num_processes,
                                       max_queue_size=num_processes * 3,
                                       transform=transform)
+
+    torch_dataset = TorchTestDataset(image_path, mask_path, transform=transform)
+    torch_dataloader = DataLoader(torch_dataset, batch_size=batch_size, shuffle=True, num_workers=num_processes)
+
     print('starting....')
     test_dataset.start()
 
     print("starting finished\nbegin testing...")
 
     start = time.time_ns()
-    for i in range(test_dataset.num_batches):
+    for i in tqdm(range(test_dataset.num_batches)):
         image, mask = test_dataset.get_item()
-        print(f'Iteration: {i}, shape: {image.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
         # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
 
     end = time.time_ns()
@@ -409,3 +447,14 @@ if __name__ == '__main__':
     test_dataset.join()
 
     print(end - start)
+
+    start = time.time_ns()
+
+    for i, data in enumerate(tqdm(torch_dataloader, 0)):
+        image, mask = data
+        # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
+
+    end = time.time_ns()
+    print(end - start)
+
+
