@@ -172,8 +172,8 @@ class WeedAndCropDataset:
                  batch_size=1,
                  epochs=1,
                  num_processes=1,
-                 transform=None,
-                 ):
+                 max_queue_size=50,
+                 transform=None):
 
         assert batch_size >= 1, 'The batch size entered is <= 0'
         assert epochs >= 1, 'The epochs entered is <= 0'
@@ -186,10 +186,11 @@ class WeedAndCropDataset:
         self.transform = transform
         self.num_processes = num_processes
         self.batch_size = batch_size
+        self.max_queue_size = max_queue_size
 
         # defining the joinable queues
         self.index_queue = mp.JoinableQueue()
-        self.image_mask_queue = mp.JoinableQueue()
+        self.image_mask_queue = mp.JoinableQueue(max_queue_size)
         self.command_queue = mp.JoinableQueue()
 
         # storing indexes to the path array
@@ -207,6 +208,7 @@ class WeedAndCropDataset:
                                     self.index_queue,
                                     self.image_mask_queue,
                                     self.command_queue,
+                                    self.max_queue_size,
                                     self.transform))
             self.read_transform_processes.append(proc)
 
@@ -280,6 +282,7 @@ class WeedAndCropDataset:
                              index_queue: mp.JoinableQueue,
                              image_mask_queue: mp.JoinableQueue,
                              command_queue: mp.JoinableQueue,
+                             max_queue_size,
                              transform=None):
         while True:
             indexes = index_queue.get()
@@ -290,6 +293,7 @@ class WeedAndCropDataset:
 
             image_batch = []
             mask_batch = []
+
             for index in indexes:
                 image = image_paths[index]
                 mask = mask_paths[index]
@@ -301,6 +305,7 @@ class WeedAndCropDataset:
 
             image_batch = torch.stack(image_batch, dim=0)
             mask_batch = torch.stack(mask_batch, dim=0)
+
             image_mask_queue.put((image_batch, mask_batch))
 
         # Waiting for get_item to be finished with the queue
@@ -386,6 +391,7 @@ if __name__ == '__main__':
                                       batch_size=batch_size,
                                       epochs=epochs,
                                       num_processes=num_processes,
+                                      max_queue_size=num_processes * 3,
                                       transform=transform)
     print('starting....')
     test_dataset.start()
