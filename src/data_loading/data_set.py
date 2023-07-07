@@ -6,7 +6,6 @@ import time
 import glob
 import torch
 import cv2
-import albumentations as A
 
 """NOTE in the documentation transforms and augmented are used interchangeably"""
 
@@ -380,47 +379,47 @@ def read_and_transform(image_path, mask_path, transform=None):
     return image, mask
 
 
-if __name__ == '__main__':
-
-    image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
-    mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
-    # image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\images'
-    # mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\leaf_instances'
-
-    transform = A.Compose([
-        A.Resize(256, 256),
-        A.HorizontalFlip(p=0.5),
-        A.VerticalFlip(p=0.5),
-        A.RandomRotate90(p=0.5),
-        A.HueSaturationValue()
-    ])
-
-    epochs = 4
-    num_processes = 6
-    batch_size = 32
-
-    test_dataset = DSAL(image_path,
-                        mask_path,
-                        read_and_transform,
-                        batch_size=batch_size,
-                        epochs=epochs,
-                        num_processes=num_processes,
-                        max_queue_size=num_processes * 3,
-                        transform=transform)
-
-    print('starting....')
-    test_dataset.start()
-
-    print("starting finished\nbegin testing...")
-
-    start = time.time_ns()
-    for i in range(test_dataset.num_batches):
-        image, mask = test_dataset.get_item()
-        print(f'Iteration: {i}, shape: {image.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
-        # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
-
-    end = time.time_ns()
-
-    test_dataset.join()
-
-    print(end - start)
+# if __name__ == '__main__':
+#
+#     image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
+#     mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
+#     # image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\images'
+#     # mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\leaf_instances'
+#
+#     transform = A.Compose([
+#         A.Resize(256, 256),
+#         A.HorizontalFlip(p=0.5),
+#         A.VerticalFlip(p=0.5),
+#         A.RandomRotate90(p=0.5),
+#         A.HueSaturationValue()
+#     ])
+#
+#     epochs = 4
+#     num_processes = 6
+#     batch_size = 32
+#
+#     test_dataset = DSAL(image_path,
+#                         mask_path,
+#                         read_and_transform,
+#                         batch_size=batch_size,
+#                         epochs=epochs,
+#                         num_processes=num_processes,
+#                         max_queue_size=num_processes * 3,
+#                         transform=transform)
+#
+#     print('starting....')
+#     test_dataset.start()
+#
+#     print("starting finished\nbegin testing...")
+#
+#     start = time.time_ns()
+#     for i in range(test_dataset.num_batches):
+#         image, mask = test_dataset.get_item()
+#         print(f'Iteration: {i}, shape: {image.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
+#         # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
+#
+#     end = time.time_ns()
+#
+#     test_dataset.join()
+#
+#     print(end - start)
