@@ -1,65 +1,63 @@
+import math
 import os
 import shutil
-
-import pandas as pd
-import yaml
+import random
 from tqdm import tqdm
 
-images_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\images'
-train_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\train_image'
-test_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\test_image'
-csv_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\WR2021.csv'
+
+# this program will split training and validator apart
+
+def get_image_paths(images_text, image_path):
+    out = []
+
+    with open(images_text, 'r') as f:
+        image_names = f
+
+        for i in image_names:
+            if '\n' in i:
+                i = i[:-1]
+            curr_img = os.path.join(image_path, i)
+            out.append(curr_img)
+    return out
 
 
-def copy_image(images, save_path):
-    for i in images:
-        if '\n' in i:
-            i = i[:-1]
-
-        curr_img = os.path.join(images_path, i)
-        shutil.copy(curr_img, save_path)
+def copy_images(src, dst):
+    for i in src:
+        shutil.copy(i, dst)
 
 
 if __name__ == '__main__':
-    yaml_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\labels_trainval.yml'
+    images_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\images'
+    train_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\train_image'
+    test_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\test_image'
+    val_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\val_images'
 
-    train_im = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\trainval.txt'
-    test_im = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\test.txt'
+    image_val_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\trainval.txt'
+    test_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\test.txt'
 
-    train_images = set(open(train_im))
-    test_images = set(open(test_im))
+    train_val_path = get_image_paths(image_val_text, images_path)
+    test_paths = get_image_paths(test_text, images_path)
 
-    copy_image(train_images, train_im_save_path)
-    copy_image(test_images, test_im_save_path)
+    copy_images(test_paths, test_im_save_path)
 
-    csv = {
-        'image_name': [],
-        'unfertilized': [],
-        '_PKCa': [],
-        'N_KCa': [],
-        'NP_Ca': [],
-        'NPK_': [],
-        'NPKCa': [],
-        'NPKCa+m+s': []
-    }
+    train_val_len = len(train_val_path)
 
-    with open(yaml_path, 'r') as f:
-        labels = yaml.safe_load(f)
+    no_repeat = set()
+    val_amount = math.floor(train_val_len * 0.15)
 
-    for image in tqdm(train_images):
-        if '\n' in image:
-            image = image[:-1]
+    while True:
+        if len(no_repeat) == val_amount:
+            break
+        no_repeat.add(random.randint(0, train_val_len - 1))
 
-        label = labels[image]
-        csv['image_name'].append(image)
+    val_paths = []
+    train_paths = []
 
-        csv['unfertilized'].append(1 if label == 'unfertilized' else 0)
-        csv['_PKCa'].append(1 if label == '_PKCa' else 0)
-        csv['N_KCa'].append(1 if label == 'N_KCa' else 0)
-        csv['NP_Ca'].append(1 if label == 'NP_Ca' else 0)
-        csv['NPK_'].append(1 if label == 'NPK_' else 0)
-        csv['NPKCa'].append(1 if label == 'NPKCa' else 0)
-        csv['NPKCa+m+s'].append(1 if label == 'NPKCa+m+s' else 0)
+    for i in range(train_val_len):
+        if i in no_repeat:
+            val_paths.append(train_val_path[i])
+        else:
+            train_paths.append(train_val_path[i])
 
-    df = pd.DataFrame.from_dict(csv)
-    df.to_csv(csv_save_path, index=False)
+    copy_images(val_paths, val_im_save_path)
+    copy_images(train_paths, train_im_save_path)

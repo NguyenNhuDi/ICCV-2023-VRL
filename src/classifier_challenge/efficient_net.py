@@ -117,7 +117,7 @@ if __name__ == '__main__':
     learning_rate = args['learning_rate']
     momentum = args['momentum']
 
-    dsal = DSAL(images,
+    train_dsal = DSAL(images,
                 labels,
                 transform_image_label,
                 batch_size=batch_size,
@@ -127,7 +127,7 @@ if __name__ == '__main__':
                 transform=transform)
 
     print('starting pathing...')
-    dsal.start()
+    train_dsal.start()
     print('pathing finished')
 
     # declaring the model
@@ -145,15 +145,15 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum)
 
-    epoch_size = dsal.total_size // epochs
+    epoch_size = train_dsal.total_size // epochs
 
     counter = 0
 
-    for i in range(dsal.num_batches):
-        image, label = dsal.get_item()
+    for i in range(train_dsal.num_batches):
+        image, label = train_dsal.get_item()
 
         print(f'image shape: {image.shape}, label: {label.shape}')
 
         counter += 1
 
-    dsal.join()
+    train_dsal.join()
