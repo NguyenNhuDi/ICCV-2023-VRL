@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn, optim
-from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import datasets, transforms
 from torchvision import models
 import sys
@@ -10,13 +9,30 @@ import argparse
 import json
 from PIL import Image
 import yaml
+from tqdm import tqdm
 
 sys.path.append(r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\ICCV-2023-VRL')
 from src.data_loading.DSAL import DSAL
 
 
+# this is how you find mean and std
+# image, label = train_dsal.get_item()
+#
+# channels_sum += torch.mean(image, dim=[0, 2, 3])
+# channels_squared_sum += torch.mean(image ** 2, dim=[0, 2, 3])
+# num_batches += 1
+#
+# counter += 1
+#
+# mean = channels_sum / num_batches
+# std = (channels_sum / num_batches - mean ** 2) ** 0.5
+#
+# print(mean)
+# print(std)
+
+
 def transform_image_label(image_path, label, transform):
-    np_image = Image.open(image_path)
+    out_image = Image.open(image_path)
 
     if label == 'unfertilized':
         out_label = 0
@@ -34,13 +50,13 @@ def transform_image_label(image_path, label, transform):
         out_label = 6
 
     if transform is not None:
-        np_image = transform(np_image)
+        out_image = transform(out_image)
 
     # converting the image and mask into tensors
 
     out_label = torch.tensor(out_label)
 
-    return np_image, out_label
+    return out_image, out_label
 
 
 def freeze(model):
@@ -76,8 +92,7 @@ def evaluate(model, val_batches, device, criterion, epoch):
     accuracy = total_correct / total
     print(f'Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}')
 
-# TODO get val into its own folder
-# TODO get val_batches
+
 # TODO write train loop
 
 
@@ -100,31 +115,47 @@ if __name__ == '__main__':
         transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.ToTensor(),
-        transforms.Normalize((0, 0, 0),
-                             (1, 1, 1))
+        transforms.Normalize((0.4780, 0.4116, 0.3001),
+                             (0.4995, 0.4921, 0.4583))
     ])
 
-    images = args['image_path']
+    train_image = args['train_path']
+    val_image = args['val_path']
     yaml_path = args['yaml_path']
+    batch_size = args['batch_size']
+    epochs = args['epochs']
+    num_processes = args['num_processes']
+    learning_rate = args['learning_rate']
+    momentum = args['momentum']
 
     with open(yaml_path, 'r') as f:
         labels = yaml.safe_load(f)
 
-    batch_size = args['batch_size']
-    epochs = args['epochs']
-    num_processes = args['num_processes']
+    train_dsal = DSAL(train_image,
+                      labels,
+                      transform_image_label,
+                      batch_size=batch_size,
+                      epochs=epochs,
+                      num_processes=num_processes,
+                      max_queue_size=num_processes * 3,
+                      transform=transform)
 
-    learning_rate = args['learning_rate']
-    momentum = args['momentum']
+    val_dsal = DSAL(val_image,
+                    labels,
+                    transform_image_label,
+                    batch_size=batch_size,
+                    epochs=epochs,
+                    num_processes=num_processes,
+                    max_queue_size=num_processes * 3,
+                    transform=transform)
 
-    train_dsal = DSAL(images,
-                labels,
-                transform_image_label,
-                batch_size=batch_size,
-                epochs=epochs,
-                num_processes=num_processes,
-                max_queue_size=num_processes * 3,
-                transform=transform)
+    val_dsal.start()
+
+    # storing valid batches in memory
+
+    val_batches = []
+    for i in tqdm(range(val_dsal.num_batches)):
+        val_batches.append(val_dsal.get_item())
 
     print('starting pathing...')
     train_dsal.start()
@@ -145,14 +176,38 @@ if __name__ == '__main__':
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=momentum)
 
-    epoch_size = train_dsal.total_size // epochs
-
     counter = 0
+    batches_per_epoch = train_dsal.num_batches // epochs
+    epoch = 0
 
-    for i in range(train_dsal.num_batches):
+    total = 0
+    total_correct = 0
+    total_loss = 0
+    for i in tqdm(range(train_dsal.num_batches)):
+
+        if counter == batches_per_epoch:
+            loss = total_loss / total
+            accuracy = total_correct / total
+            print(f'Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}')
+
+            total = 0
+            total_correct = 0
+            total_loss = 0
+            epoch += 1
+            counter = 0
+
         image, label = train_dsal.get_item()
+        image, label = image.to(device), label.to(device)
 
-        print(f'image shape: {image.shape}, label: {label.shape}')
+        optimizer.zero_grad()
+        outputs, _ = model(image)
+        loss = criterion(outputs, label)
+        loss.backward()
+        optimizer.step()
+        total += image.size(0)
+        _, predictions = outputs.max(1)
+        total_correct += (predictions == label).sum()
+        total_loss += loss.item() * image.size(0)
 
         counter += 1
 
