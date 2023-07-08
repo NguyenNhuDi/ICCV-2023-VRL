@@ -2,7 +2,6 @@ import math
 import os
 import shutil
 import random
-from tqdm import tqdm
 
 
 # this program will split training and validator apart
