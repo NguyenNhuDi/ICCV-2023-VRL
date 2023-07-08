@@ -1,0 +1,9 @@
+{
+  "image_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\train_image",
+  "yaml_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\labels_trainval.yml",
+  "batch_size": 32,
+  "epochs": 10,
+  "num_processes":  6,
+  "learning_rate": 0.01,
+  "momentum": 0.9
+}

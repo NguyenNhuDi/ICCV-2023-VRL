@@ -197,7 +197,7 @@ class DSAL:
         assert num_processes >= 1, 'The number of processes entered is <= 0'
 
         # storing parameters
-        self.image_dir = np.array(glob.glob(f'{image_dir}/*.png'))
+        self.image_dir = np.array(glob.glob(f'{image_dir}/*.jpg'))
 
         # check to see if this is a path to masks or label csv
         self.yml = yml
