@@ -90,7 +90,7 @@ def evaluate(model, val_batches, device, criterion, epoch):
 
     loss = total_loss / total
     accuracy = total_correct / total
-    print(f'Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}')
+    print(f'Evaluate --- Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}')
 
 
 # TODO write train loop
@@ -131,20 +131,11 @@ if __name__ == '__main__':
     with open(yaml_path, 'r') as f:
         labels = yaml.safe_load(f)
 
-    train_dsal = DSAL(train_image,
-                      labels,
-                      transform_image_label,
-                      batch_size=batch_size,
-                      epochs=epochs,
-                      num_processes=num_processes,
-                      max_queue_size=num_processes * 3,
-                      transform=transform)
-
     val_dsal = DSAL(val_image,
                     labels,
                     transform_image_label,
                     batch_size=batch_size,
-                    epochs=epochs,
+                    epochs=1,
                     num_processes=num_processes,
                     max_queue_size=num_processes * 3,
                     transform=transform)
@@ -154,8 +145,19 @@ if __name__ == '__main__':
     # storing valid batches in memory
 
     val_batches = []
-    for i in tqdm(range(val_dsal.num_batches)):
+    for i in range(val_dsal.num_batches):
         val_batches.append(val_dsal.get_item())
+
+    val_dsal.join()
+
+    train_dsal = DSAL(train_image,
+                      labels,
+                      transform_image_label,
+                      batch_size=batch_size,
+                      epochs=epochs,
+                      num_processes=num_processes,
+                      max_queue_size=num_processes * 3,
+                      transform=transform)
 
     print('starting pathing...')
     train_dsal.start()
@@ -183,12 +185,22 @@ if __name__ == '__main__':
     total = 0
     total_correct = 0
     total_loss = 0
-    for i in tqdm(range(train_dsal.num_batches)):
+
+    model.to(device)
+
+    torch.set_grad_enabled(True)
+
+    for i in range(train_dsal.num_batches):
+
+        if epoch == 2:
+            unfreeze(model)
 
         if counter == batches_per_epoch:
-            loss = total_loss / total
+            total_loss = total_loss / total
             accuracy = total_correct / total
-            print(f'Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}')
+            print(f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}')
+            evaluate(model, val_batches, device, criterion, epoch)
+            model.train()
 
             total = 0
             total_correct = 0
@@ -200,8 +212,9 @@ if __name__ == '__main__':
         image, label = image.to(device), label.to(device)
 
         optimizer.zero_grad()
-        outputs, _ = model(image)
+        outputs = model(image)
         loss = criterion(outputs, label)
+        loss.requires_grad = True
         loss.backward()
         optimizer.step()
         total += image.size(0)
@@ -210,5 +223,10 @@ if __name__ == '__main__':
         total_loss += loss.item() * image.size(0)
 
         counter += 1
+
+    total_loss = total_loss / total
+    accuracy = total_correct / total
+    print(f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}')
+    evaluate(model, val_batches, device, criterion, epoch)
 
     train_dsal.join()

@@ -1,14 +1,11 @@
 import math
 import multiprocessing as mp
 import os.path
-import pandas as pd
 import numpy as np
 import queue
 import time
 import glob
 import torch
-import cv2
-import albumentations as A
 
 """NOTE in the documentation transforms and augmented are used interchangeably"""
 
@@ -370,26 +367,27 @@ class DSAL:
             time.sleep(0.01)
             return self.get_item()
 
+# example transform and read method
 
-def read_and_transform(image_path, mask_path, transform=None):
-    image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
-    mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-
-    # converting the type of number from int to float and turn the pixels into the range [0,1]
-    image = np.array(image, dtype=np.float32) / 255.0
-    mask = np.array(mask, dtype=np.float32) / 255.0
-
-    # applying the transformations
-    if transform is not None:
-        augmented = transform(image=image, mask=mask)
-        image = augmented['image']
-        mask = augmented['mask']
-
-    # converting the image and mask into tensors
-    image = torch.from_numpy(image).permute(2, 1, 0)
-    mask = torch.from_numpy(mask).unsqueeze(0)
-
-    return image, mask
+# def read_and_transform(image_path, mask_path, transform=None):
+#     image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
+#     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+#
+#     # converting the type of number from int to float and turn the pixels into the range [0,1]
+#     image = np.array(image, dtype=np.float32) / 255.0
+#     mask = np.array(mask, dtype=np.float32) / 255.0
+#
+#     # applying the transformations
+#     if transform is not None:
+#         augmented = transform(image=image, mask=mask)
+#         image = augmented['image']
+#         mask = augmented['mask']
+#
+#     # converting the image and mask into tensors
+#     image = torch.from_numpy(image).permute(2, 1, 0)
+#     mask = torch.from_numpy(mask).unsqueeze(0)
+#
+#     return image, mask
 
 #
 # if __name__ == '__main__':
