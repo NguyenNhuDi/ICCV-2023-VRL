@@ -10,10 +10,7 @@ import json
 from PIL import Image
 import yaml
 from tqdm import tqdm
-
-sys.path.append(r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\ICCV-2023-VRL')
-from src.data_loading.DSAL import DSAL
-
+from DSAL import DSAL
 
 # this is how you find mean and std
 # image, label = train_dsal.get_item()
@@ -29,7 +26,6 @@ from src.data_loading.DSAL import DSAL
 #
 # print(mean)
 # print(std)
-
 
 def transform_image_label(image_path, label, transform):
     out_image = Image.open(image_path)
@@ -74,6 +70,7 @@ def evaluate(model, val_batches, device, criterion, epoch):
     total_correct = 0
     total_loss = 0
     total = 0
+
     for batch in val_batches:
         image, label = batch
         image, label = image.to(device), label.to(device)
@@ -90,8 +87,9 @@ def evaluate(model, val_batches, device, criterion, epoch):
 
     loss = total_loss / total
     accuracy = total_correct / total
-    print(f"Evaluate --- Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}")
 
+    print(f"Evaluate --- Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}")
+    return loss, accuracy
 
 # TODO write train loop
 
@@ -110,7 +108,7 @@ if __name__ == '__main__':
         args = json.load(f)
 
     transform = transforms.Compose([
-        transforms.RandomCrop((500, 500)),
+        transforms.Resize((500, 500)),
         transforms.RandomRotation(180),
         transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomHorizontalFlip(p=0.5),
@@ -187,9 +185,17 @@ if __name__ == '__main__':
     total_correct = 0
     total_loss = 0
 
+    best_loss = 1000
+    best_accuracy = 0
+    best_epoch = 0
+
     model.to(device)
 
     torch.set_grad_enabled(True)
+
+    # scheduler: optimizer, step size, gamma
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, 0.85)
+
 
     for i in tqdm(range(train_dsal.num_batches)):
 
@@ -197,7 +203,17 @@ if __name__ == '__main__':
             total_loss = total_loss / total
             accuracy = total_correct / total
             print(f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}')
-            evaluate(model, val_batches, device, criterion, epoch)
+            current_loss, current_accuracy = evaluate(model, val_batches, device, criterion, epoch)
+            
+            if current_accuracy > best_accuracy:
+                best_accuracy = current_accuracy
+                best_epoch = epoch
+
+            if current_loss < best_loss:
+                best_loss = current_loss
+            
+            print(f'Best epoch: {best_epoch}, Best Loss: {best_loss:6.4f}, Best Accuracy: {best_accuracy:6.4f}')
+            print_lr()
             model.train()
 
             total = 0
@@ -205,6 +221,7 @@ if __name__ == '__main__':
             total_loss = 0
             epoch += 1
             counter = 0
+            scheduler.step()
 
         if epoch == unfreeze_epoch:
             unfreeze(model)
@@ -230,7 +247,11 @@ if __name__ == '__main__':
 
     total_loss = total_loss / total
     accuracy = total_correct / total
+
     print(f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}')
     evaluate(model, val_batches, device, criterion, epoch)
 
+
     train_dsal.join()
+    save_path = r'/home/adeeb.hossain1/Classifier/saved_models'
+    torch.save(model, save_path)
