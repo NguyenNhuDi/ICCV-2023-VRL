@@ -127,11 +127,10 @@ if __name__ == '__main__':
     num_processes = args['num_processes']
     learning_rate = args['learning_rate']
     momentum = args['momentum']
+    unfreeze_epoch = args['unfreeze_epoch']
 
     with open(yaml_path, 'r') as f:
         labels = yaml.safe_load(f)
-
-
 
     val_dsal = DSAL(val_image,
                     labels,
@@ -153,13 +152,13 @@ if __name__ == '__main__':
     val_dsal.join()
 
     train_dsal = DSAL(train_image,
-                    labels,
-                    transform_image_label,
-                    batch_size=batch_size,
-                    epochs=epochs,
-                    num_processes=num_processes,
-                    max_queue_size=num_processes * 2,
-                    transform=transform)
+                      labels,
+                      transform_image_label,
+                      batch_size=batch_size,
+                      epochs=epochs,
+                      num_processes=num_processes,
+                      max_queue_size=num_processes * 2,
+                      transform=transform)
 
     print('starting pathing...')
     train_dsal.start()
@@ -167,7 +166,6 @@ if __name__ == '__main__':
 
     # declaring the model
     model = models.efficientnet_b6(pretrained=True)
-
 
     model.classifier = nn.Sequential(
         nn.Dropout(p=0.5, inplace=True),
@@ -208,7 +206,7 @@ if __name__ == '__main__':
             epoch += 1
             counter = 0
 
-        if epoch == 2:
+        if epoch == unfreeze_epoch:
             unfreeze(model)
 
         image, label = train_dsal.get_item()
@@ -218,7 +216,7 @@ if __name__ == '__main__':
         outputs = model(image)
         loss = criterion(outputs, label)
 
-        if epoch < 2:
+        if epoch < unfreeze_epoch:
             loss.requires_grad = True
 
         loss.backward()
