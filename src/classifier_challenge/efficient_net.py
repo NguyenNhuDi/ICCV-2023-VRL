@@ -90,7 +90,7 @@ def evaluate(model, val_batches, device, criterion, epoch):
 
     loss = total_loss / total
     accuracy = total_correct / total
-    print(f'Evaluate --- Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}')
+    print(f"Evaluate --- Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}")
 
 
 # TODO write train loop
@@ -131,13 +131,15 @@ if __name__ == '__main__':
     with open(yaml_path, 'r') as f:
         labels = yaml.safe_load(f)
 
+
+
     val_dsal = DSAL(val_image,
                     labels,
                     transform_image_label,
                     batch_size=batch_size,
                     epochs=1,
                     num_processes=num_processes,
-                    max_queue_size=num_processes * 3,
+                    max_queue_size=num_processes * 2,
                     transform=transform)
 
     val_dsal.start()
@@ -145,30 +147,31 @@ if __name__ == '__main__':
     # storing valid batches in memory
 
     val_batches = []
-    for i in range(val_dsal.num_batches):
+    for i in tqdm(range(val_dsal.num_batches)):
         val_batches.append(val_dsal.get_item())
 
     val_dsal.join()
 
     train_dsal = DSAL(train_image,
-                      labels,
-                      transform_image_label,
-                      batch_size=batch_size,
-                      epochs=epochs,
-                      num_processes=num_processes,
-                      max_queue_size=num_processes * 3,
-                      transform=transform)
+                    labels,
+                    transform_image_label,
+                    batch_size=batch_size,
+                    epochs=epochs,
+                    num_processes=num_processes,
+                    max_queue_size=num_processes * 2,
+                    transform=transform)
 
     print('starting pathing...')
     train_dsal.start()
     print('pathing finished')
 
     # declaring the model
-    model = models.efficientnet_b7(pretrained=True)
+    model = models.efficientnet_b6(pretrained=True)
+
 
     model.classifier = nn.Sequential(
         nn.Dropout(p=0.5, inplace=True),
-        nn.Linear(in_features=2560, out_features=256),
+        nn.Linear(in_features=2304, out_features=256),
         nn.Linear(in_features=256, out_features=7)
     )
 
@@ -190,10 +193,7 @@ if __name__ == '__main__':
 
     torch.set_grad_enabled(True)
 
-    for i in range(train_dsal.num_batches):
-
-        if epoch == 2:
-            unfreeze(model)
+    for i in tqdm(range(train_dsal.num_batches)):
 
         if counter == batches_per_epoch:
             total_loss = total_loss / total
@@ -208,13 +208,19 @@ if __name__ == '__main__':
             epoch += 1
             counter = 0
 
+        if epoch == 2:
+            unfreeze(model)
+
         image, label = train_dsal.get_item()
         image, label = image.to(device), label.to(device)
 
         optimizer.zero_grad()
         outputs = model(image)
         loss = criterion(outputs, label)
-        loss.requires_grad = True
+
+        if epoch < 2:
+            loss.requires_grad = True
+
         loss.backward()
         optimizer.step()
         total += image.size(0)
