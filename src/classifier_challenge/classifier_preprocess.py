@@ -2,6 +2,7 @@ import math
 import os
 import shutil
 import random
+from tqdm import tqdm
 
 
 # this program will split training and validator apart
@@ -25,19 +26,16 @@ def copy_images(src, dst):
         shutil.copy(i, dst)
 
 
-if __name__ == '__main__':
-    images_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\images'
-    train_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\train_image'
-    test_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\test_image'
-    val_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\val_images'
+def save_images(text_image_val,
+                image_dir,
+                text_test,
+                test_im_save_dir,
+                val_im_save_dir,
+                train_im_save_dir):
+    train_val_path = get_image_paths(text_image_val, image_dir)
+    test_paths = get_image_paths(text_test, image_dir)
 
-    image_val_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\trainval.txt'
-    test_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\test.txt'
-
-    train_val_path = get_image_paths(image_val_text, images_path)
-    test_paths = get_image_paths(test_text, images_path)
-
-    copy_images(test_paths, test_im_save_path)
+    copy_images(test_paths, test_im_save_dir)
 
     train_val_len = len(train_val_path)
 
@@ -52,11 +50,30 @@ if __name__ == '__main__':
     val_paths = []
     train_paths = []
 
-    for i in range(train_val_len):
+    for i in tqdm(range(train_val_len)):
         if i in no_repeat:
             val_paths.append(train_val_path[i])
         else:
             train_paths.append(train_val_path[i])
 
-    copy_images(val_paths, val_im_save_path)
-    copy_images(train_paths, train_im_save_path)
+    print(val_paths)
+
+    copy_images(val_paths, val_im_save_dir)
+    copy_images(train_paths, train_im_save_dir)
+
+
+if __name__ == '__main__':
+    images_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\images'
+    train_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\train_image'
+    test_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\test_image'
+    val_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\val_image'
+
+    image_val_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\trainval.txt'
+    test_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\test.txt'
+
+    images_path_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\images'
+    image_val_text_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\trainval.txt'
+    test_text_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\test.txt'
+
+    save_images(image_val_text, images_path, test_text, test_im_save_path, val_im_save_path, train_im_save_path)
+    save_images(image_val_text_, images_path_, test_text_, test_im_save_path, val_im_save_path, train_im_save_path)
