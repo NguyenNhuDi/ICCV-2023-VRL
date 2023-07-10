@@ -14,112 +14,112 @@ DSAL (Dataset and loader)
     This clas will transform and batch images/masks/labels for machine learning tasks
     To use this class, make sure to define a function that will read and transform your images/labels
     this function should have the (image_dir, label_obj, transform) as parameters
-    
+
     If DSAL is used for csv label reading, simply pass in the absolute path to the label csv into the
     yml parameter slot
-    
+
 
 Attributes
 ----------------------------------------------------------------
     image_dir : np.array
         a numpy array holding all the path of the images
-        
+
     yml : np.array
         a numpy array holding all the path of the masks
-        
+
     read_and_transform_function : function
         this function will be used to read and transform the images/labels
-    
+
     epochs : int
         the number of epochs the model will be trained with
-    
+
     transform : 
         the function responsible for augmenting the image and mask
-    
+
     num_processes : int
         the number of processes that the dataset will use
-        
+
     batch_size : int
         the size of the batches
-        
+
     index_queue : JoinableQueue
         the queue that will hold all the indexes to the different paths in batches
-    
+
     image_mask_queue : JoinableQueue
         the queue that will hold all the augmented images and mask
         the item in the queue is stored as a tuple with the format (image_batch, mask_batch)
-        
+
     command_queue : JoinableQueue
         the queue that will determines when the transformation processes will end
         the item in the queue will only ever be None
         and it will hold a maximum num_processes amount of item
-        
+
     index_arr : np.array
         an array that holds the indexes to the paths, this array will be shuffled to 
         simulate randomness
-        
+
     read_transform_processes : List[process]
         the list that holds all the processes that will read and transform the images and mask
-        
+
     accessed : int
         counter that is used in get_item to tell when image_mask_queue is empty
-        
+
     total_size : int
         the total amount of images and masks that will be processed (epoch * number of images/masks)
-    
+
     num_batches : int
         total number of batches
-    
-        
+
+
 Methods
  ----------------------------------------------------------------
     __init__ : None
         store the image and mask directory, number of training epochs
         transformation function and the number of processes
         it will also define the joinable queues and define the read transform processes
-        
+
         parameters:
-        
+
             image_dir : str
                 the absolute path to the directory containing the images
-                
+
             yml : str
                 the absolute path to the directory containing the masks
-                
+
             read_and_transform_function : function
                 the function that the user wrote to read a image and label path and
                 apply transformations to it. The parameters should be in the form
                 (image_dir, yml, transform). It should also return the transformed
                 image and label
-            
+
             batch_size : int, optional
                 the size of the batches
                 default is 1
-                
+
             epochs : int, optional
                 the number of epochs the model will be trained with
                 default is 1
-                
+
             num_processes : int, optional
                 the number of processes
                 default is 1
-                
+
             transform : optional
                 the transformation function that will augment the images and masks
                 default is None
-                
 
-    
+
+
     __populate_index_queue__ : None
         populate the index queue with bathes of indexes in random order
-        
+
         parameters:
             None
-        
+
     __read_transform_image_mask__ : tensor, tensor
         read the image and mask and augment them. 
         the augmented image and mask will be returned as tensors
-        
+
         parameters:
             image_path : str
                 the absolute path to the image that is being augmented
@@ -127,52 +127,52 @@ Methods
                 the absolute path to the mask that is being augmented
             transform : function
                 the transformation function that will transform the mask and image
-    
+
     __batch_image_mask__ : None
         put images and masks in a batch and enqueue it into image_mask_queue
-        
+
         parameters:
             image_paths : np.array
                 the array holding all the image paths
-            
+
             mask_paths : np.array
                 the array holding all the mask paths
-            
+
             index_queue : mp.JoinableQueue
                 the queue holding all the indexes
-            
+
             image_mask_queue : mp.JoinableQueue
                 the output queue where the augmented image batch and mask batch 
                 will be enqueued into
-                
+
             command_queue : mp.JoinableQueue
                 the queue that will determine when the process running this method
                 will terminate
-            
+
             transform : function
                 the transformation function that will augment the image and mask
-                
+
     start : None
         start the processes
-        
+
         parameters:
             None
-        
+
     Join : None
         join the processes and queue
-        
+
         parameters:
             None
-     
+
      __len__ : int
         return the length of the dataset
-        
+
         parameters:
             None
-    
+
     get_item : tensor, tensor
         return the image and mask batch that is in front of image_mask_queue
-        
+
         parameters:
             None 
 """
@@ -187,7 +187,8 @@ class DSAL:
                  epochs=1,
                  num_processes=1,
                  max_queue_size=50,
-                 transform=None):
+                 transform=None,
+                 gen_submision=False):
 
         assert batch_size >= 1, 'The batch size entered is <= 0'
         assert epochs >= 1, 'The epochs entered is <= 0'
@@ -197,7 +198,8 @@ class DSAL:
         self.image_dir = np.array(glob.glob(f'{image_dir}/*.jpg'))
 
         # check to see if this is a path to masks or label csv
-        self.yml = yml
+        if not gen_submision:
+            self.yml = list(yml)
 
         self.read_and_transform_function = read_and_transform_function
         self.epochs = epochs
@@ -223,11 +225,12 @@ class DSAL:
             proc = mp.Process(target=self.__batch_image_mask__,
                               args=(self.read_and_transform_function,
                                     self.image_dir,
-                                    self.yml,
+                                    yml,
                                     self.index_queue,
                                     self.image_mask_queue,
                                     self.command_queue,
-                                    self.transform))
+                                    self.transform,
+                                    gen_submision))
             self.read_transform_processes.append(proc)
 
         # counter to tell when the processes terminate
@@ -280,7 +283,8 @@ class DSAL:
                              index_queue: mp.JoinableQueue,
                              image_mask_queue: mp.JoinableQueue,
                              command_queue: mp.JoinableQueue,
-                             transform=None):
+                             transform=None,
+                             gen_submission=False):
         while True:
             indexes = index_queue.get()
             index_queue.task_done()
@@ -296,7 +300,9 @@ class DSAL:
 
                 image_name = os.path.basename(image)
 
-                label = yml[image_name]
+                label = None
+                if not gen_submission:
+                    label = yml[image_name]
 
                 image, mask = read_and_transform_function(image, label, transform)
 
@@ -367,26 +373,24 @@ class DSAL:
             time.sleep(0.01)
             return self.get_item()
 
-# example transform and read method
-
 # def read_and_transform(image_path, mask_path, transform=None):
 #     image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
 #     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-#
+
 #     # converting the type of number from int to float and turn the pixels into the range [0,1]
 #     image = np.array(image, dtype=np.float32) / 255.0
 #     mask = np.array(mask, dtype=np.float32) / 255.0
-#
+
 #     # applying the transformations
 #     if transform is not None:
 #         augmented = transform(image=image, mask=mask)
 #         image = augmented['image']
 #         mask = augmented['mask']
-#
+
 #     # converting the image and mask into tensors
 #     image = torch.from_numpy(image).permute(2, 1, 0)
 #     mask = torch.from_numpy(mask).unsqueeze(0)
-#
+
 #     return image, mask
 
 #
