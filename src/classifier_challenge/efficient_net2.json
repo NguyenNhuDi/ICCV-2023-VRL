@@ -1,0 +1,11 @@
+{
+  "train_path": "/home/adeeb.hossain1/Classifier/train_images",
+  "val_path": "/home/adeeb.hossain1/Classifier/val_images",
+  "yaml_path": "/home/adeeb.hossain1/Classifier/labels_trainval.yml",
+  "batch_size": 32,
+  "epochs": 80,
+  "num_processes":  40,
+  "learning_rate": 0.025,
+  "momentum": 0.9,
+  "unfreeze_epoch": 3
+}
