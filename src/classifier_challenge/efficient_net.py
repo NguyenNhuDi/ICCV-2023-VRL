@@ -253,5 +253,5 @@ if __name__ == '__main__':
 
 
     train_dsal.join()
-    save_path = r'/home/adeeb.hossain1/Classifier/saved_models'
+    save_path = r'/home/adeeb.hossain1/Classification/saved_models/en_b60.pth'
     torch.save(model, save_path)
