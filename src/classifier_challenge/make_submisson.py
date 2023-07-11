@@ -93,9 +93,29 @@ if __name__ == '__main__':
     image_batch.append(temp_img)
     name_batch.append(temp_name)
 
+    _2020_predictions = []
+    _2021_predictions = []
+
     for i in range(len(image_batch)):
         image = image_batch[i].to(device)
         output = model(image)
 
         for j in range(len(output)):
-            print(name_batch[i][j], torch.argmax(output[j]).cpu().numpy())
+            name = name_batch[i][j]
+            year = name_batch[i][j][0:4]
+            prediction = torch.argmax(output[j]).cpu().numpy()
+
+            if year == '2020':
+                _2020_predictions.append((name, prediction))
+            else:
+                _2021_predictions.append((name, prediction))
+
+    f = open('predictions_WW2020.txt', 'w')
+
+    for i in _2020_predictions:
+        f.write(f'{i[0]} {i[1]}\n')
+
+    f = open('predictions_WW2021.txt', 'w')
+
+    for i in _2021_predictions:
+        f.write(f'{i[0]} {i[1]}\n')
