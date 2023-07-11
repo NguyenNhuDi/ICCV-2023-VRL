@@ -209,6 +209,7 @@ if __name__ == '__main__':
             total_loss = 0
             epoch += 1
             counter = 0
+            scheduler.step()
 
         if epoch == unfreeze_epoch:
             unfreeze(model)
