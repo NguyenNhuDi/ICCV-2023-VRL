@@ -30,22 +30,6 @@ from src.data_loading.DSAL import DSAL
 # print(mean)
 # print(std)
 
-
-# this is how you find mean and std
-# image, label = train_dsal.get_item()
-#
-# channels_sum += torch.mean(image, dim=[0, 2, 3])
-# channels_squared_sum += torch.mean(image ** 2, dim=[0, 2, 3])
-# num_batches += 1
-#
-# counter += 1
-#
-# mean = channels_sum / num_batches
-# std = (channels_sum / num_batches - mean ** 2) ** 0.5
-#
-# print(mean)
-# print(std)
-
 def transform_image_label(image_path, label, transform):
     out_image = Image.open(image_path)
 
@@ -128,11 +112,11 @@ if __name__ == '__main__':
         args = json.load(f)
 
     transform = transforms.Compose([
-        transforms.Resize((500, 500)),
+        transforms.RandomCrop((612, 612)),
         transforms.RandomRotation(180),
         transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomHorizontalFlip(p=0.5),
-        transforms.ColorJitter((0, 5), (0, 5)),
+        # transforms.ColorJitter((0,5),(0,5)),
         transforms.RandomAffine(180),
         transforms.RandomPerspective(distortion_scale=0.5, p=0.5),
         transforms.ToTensor(),
