@@ -43,10 +43,7 @@ def evaluate(model, val_batches, device):
     # accuracy = total_correct / total
 
 
-if __name__ == '__main__':
-    load_path = r'/home/nhu.nguyen2/ICCV_2023/classifier_challenge/en_b60.pth'
-    test_image_dir = r'/home/nhu.nguyen2/ICCV_2023/classifier_challenge/test_image'
-
+def generate(model_path, test_image_dir, file_name):
     img_dir = np.array(glob.glob(f'{test_image_dir}/*.jpg'))
 
     transform = transforms.Compose([
@@ -56,7 +53,7 @@ if __name__ == '__main__':
                              (0.4995, 0.4921, 0.4583))
     ])
 
-    model = torch.load(load_path)
+    model = torch.load(model_path)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device)
 
@@ -65,7 +62,7 @@ if __name__ == '__main__':
 
     counter = 0
     batch_counter = 0
-    batch_size = 32
+    batch_size = 16
 
     temp_img = []
     temp_name = []
@@ -93,8 +90,7 @@ if __name__ == '__main__':
     image_batch.append(temp_img)
     name_batch.append(temp_name)
 
-    _2020_predictions = []
-    _2021_predictions = []
+    prediction = []
 
     for i in range(len(image_batch)):
         image = image_batch[i].to(device)
@@ -102,20 +98,26 @@ if __name__ == '__main__':
 
         for j in range(len(output)):
             name = name_batch[i][j]
-            year = name_batch[i][j][0:4]
-            prediction = torch.argmax(output[j]).cpu().numpy()
+            prediction = int(torch.argmax(output[j]).cpu().numpy())
 
-            if year == '2020':
-                _2020_predictions.append((name, prediction))
-            else:
-                _2021_predictions.append((name, prediction))
+        prediction.append((name, prediction))
 
-    f = open('predictions_WW2020.txt', 'w')
+    f = open(file_name, 'w')
 
-    for i in _2020_predictions:
+    for i in prediction:
         f.write(f'{i[0]} {i[1]}\n')
 
-    f = open('predictions_WW2021.txt', 'w')
 
-    for i in _2021_predictions:
-        f.write(f'{i[0]} {i[1]}\n')
+if __name__ == '__main__':
+    _20_save_name = 'predictions_WW2020.txt'
+    _21_save_name = 'predictions_WR2021.txt'
+
+    _20_model_path = r''
+    _21_model_path = r''
+
+    _20_test_dir = r'/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/test_image'
+    _21_test_dir = r'/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/test_image'
+
+    generate(_20_model_path, _20_test_dir, _20_save_name)
+    generate(_21_model_path, _21_test_dir, _21_save_name)
+
