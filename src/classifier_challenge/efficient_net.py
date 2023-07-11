@@ -31,6 +31,21 @@ from src.data_loading.DSAL import DSAL
 # print(std)
 
 
+# this is how you find mean and std
+# image, label = train_dsal.get_item()
+#
+# channels_sum += torch.mean(image, dim=[0, 2, 3])
+# channels_squared_sum += torch.mean(image ** 2, dim=[0, 2, 3])
+# num_batches += 1
+#
+# counter += 1
+#
+# mean = channels_sum / num_batches
+# std = (channels_sum / num_batches - mean ** 2) ** 0.5
+#
+# print(mean)
+# print(std)
+
 def transform_image_label(image_path, label, transform):
     out_image = Image.open(image_path)
 
@@ -74,6 +89,7 @@ def evaluate(model, val_batches, device, criterion, epoch):
     total_correct = 0
     total_loss = 0
     total = 0
+
     for batch in val_batches:
         image, label = batch
         image, label = image.to(device), label.to(device)
@@ -90,7 +106,9 @@ def evaluate(model, val_batches, device, criterion, epoch):
 
     loss = total_loss / total
     accuracy = total_correct / total
+
     print(f"Evaluate --- Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}")
+    return loss, accuracy
 
 
 # TODO write train loop
@@ -110,10 +128,13 @@ if __name__ == '__main__':
         args = json.load(f)
 
     transform = transforms.Compose([
-        transforms.RandomCrop((500, 500)),
+        transforms.Resize((500, 500)),
         transforms.RandomRotation(180),
         transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomHorizontalFlip(p=0.5),
+        transforms.ColorJitter((0, 5), (0, 5)),
+        transforms.RandomAffine(180),
+        transforms.RandomPerspective(distortion_scale=0.5, p=0.5),
         transforms.ToTensor(),
         transforms.Normalize((0.4780, 0.4116, 0.3001),
                              (0.4995, 0.4921, 0.4583))
@@ -130,6 +151,8 @@ if __name__ == '__main__':
     unfreeze_epoch = args['unfreeze_epoch']
     epoch_step = args['epoch_step']
     gamma = args['gamma']
+    best_save_name = args['best_save_name']
+    last_save_name = args['last_save_name']
 
     with open(yaml_path, 'r') as f:
         labels = yaml.safe_load(f)
@@ -189,11 +212,16 @@ if __name__ == '__main__':
     total_correct = 0
     total_loss = 0
 
+    best_loss = 1000
+    best_accuracy = 0
+    best_epoch = 0
+
     model.to(device)
 
     torch.set_grad_enabled(True)
 
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, epoch_step, gamma)
+    # scheduler: optimizer, step size, gamma
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, 0.85)
 
     for i in tqdm(range(train_dsal.num_batches)):
 
@@ -201,7 +229,19 @@ if __name__ == '__main__':
             total_loss = total_loss / total
             accuracy = total_correct / total
             print(f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}')
-            evaluate(model, val_batches, device, criterion, epoch)
+            current_loss, current_accuracy = evaluate(model, val_batches, device, criterion, epoch)
+
+            if current_accuracy > best_accuracy:
+                best_accuracy = current_accuracy
+                best_epoch = epoch
+
+                save_path = best_save_name
+                torch.save(model, save_path)
+
+            if current_loss < best_loss:
+                best_loss = current_loss
+
+            print(f'Best epoch: {best_epoch}, Best Loss: {best_loss:6.4f}, Best Accuracy: {best_accuracy:6.4f}')
             model.train()
 
             total = 0
@@ -235,7 +275,11 @@ if __name__ == '__main__':
 
     total_loss = total_loss / total
     accuracy = total_correct / total
+
     print(f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}')
     evaluate(model, val_batches, device, criterion, epoch)
 
     train_dsal.join()
+
+    save_path = last_save_name
+    torch.save(model, save_path)

@@ -75,5 +75,9 @@ if __name__ == '__main__':
     image_val_text_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\trainval.txt'
     test_text_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\test.txt'
 
+    train_im_save_path_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\train_image'
+    test_im_save_path_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\test_image'
+    val_im_save_path_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\val_image'
+
     save_images(image_val_text, images_path, test_text, test_im_save_path, val_im_save_path, train_im_save_path)
-    save_images(image_val_text_, images_path_, test_text_, test_im_save_path, val_im_save_path, train_im_save_path)
+    save_images(image_val_text_, images_path_, test_text_, test_im_save_path_, val_im_save_path_, train_im_save_path_)
