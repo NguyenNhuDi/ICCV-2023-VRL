@@ -128,6 +128,8 @@ if __name__ == '__main__':
     learning_rate = args['learning_rate']
     momentum = args['momentum']
     unfreeze_epoch = args['unfreeze_epoch']
+    epoch_step = args['epoch_step']
+    gamma = args['gamma']
 
     with open(yaml_path, 'r') as f:
         labels = yaml.safe_load(f)
@@ -190,6 +192,8 @@ if __name__ == '__main__':
     model.to(device)
 
     torch.set_grad_enabled(True)
+
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, epoch_step, gamma)
 
     for i in tqdm(range(train_dsal.num_batches)):
 
