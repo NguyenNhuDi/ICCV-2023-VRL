@@ -3,9 +3,11 @@
   "val_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\val_image",
   "yaml_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\labels_trainval.yml",
   "batch_size": 32,
-  "epochs": 10,
-  "num_processes":  6,
+  "epochs": 1000,
+  "num_processes":  40,
   "learning_rate": 0.01,
-  "momentum": 0.9,
-  "unfreeze_epoch": 3
+  "momentum": 0.8,
+  "unfreeze_epoch": 3,
+  "epoch_step": 10,
+  "gamma": 0.85
 }
