@@ -10,10 +10,9 @@ import json
 from PIL import Image
 import yaml
 from tqdm import tqdm
-
-sys.path.append(r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\ICCV-2023-VRL')
-from src.data_loading.DSAL import DSAL
-
+import albumentations as A
+import albumentations.pytorch
+from DSAL import DSAL
 
 # this is how you find mean and std
 # image, label = train_dsal.get_item()
@@ -31,7 +30,7 @@ from src.data_loading.DSAL import DSAL
 # print(std)
 
 def transform_image_label(image_path, label, transform):
-    out_image = Image.open(image_path)
+    out_image = np.array(Image.open(image_path), dtype=np.float32) /255.0
 
     if label == 'unfertilized':
         out_label = 0
@@ -49,11 +48,16 @@ def transform_image_label(image_path, label, transform):
         out_label = 6
 
     if transform is not None:
-        out_image = transform(out_image)
+        augmented = transform(image=out_image)
+        out_image = augmented['image']
+        
+
 
     # converting the image and mask into tensors
 
+    out_image = torch.from_numpy(out_image).permute(2,0,1)
     out_label = torch.tensor(out_label)
+    
 
     return out_image, out_label
 
@@ -76,10 +80,12 @@ def evaluate(model, val_batches, device, criterion, epoch):
 
     for batch in val_batches:
         image, label = batch
+        label = label.type(torch.int64)
         image, label = image.to(device), label.to(device)
 
         with torch.no_grad():
             outputs = model(image)
+            outputs = outputs.type(torch.float32)
             loss = criterion(outputs, label)
 
             total_loss += loss.item() * image.size(0)
@@ -91,9 +97,8 @@ def evaluate(model, val_batches, device, criterion, epoch):
     loss = total_loss / total
     accuracy = total_correct / total
 
-    print(f"Evaluate --- Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}")
+    print(f'Evaluate --- Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}')
     return loss, accuracy
-
 
 # TODO write train loop
 
@@ -111,19 +116,39 @@ if __name__ == '__main__':
     with open(args.config) as f:
         args = json.load(f)
 
-    transform = transforms.Compose([
-        transforms.RandomCrop((612, 612)),
-        transforms.RandomRotation(180),
-        transforms.RandomVerticalFlip(p=0.5),
-        transforms.RandomHorizontalFlip(p=0.5),
-        # transforms.ColorJitter((0,5),(0,5)),
-        transforms.RandomAffine(180),
-        transforms.RandomPerspective(distortion_scale=0.5, p=0.5),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4780, 0.4116, 0.3001),
-                             (0.4995, 0.4921, 0.4583))
-    ])
-
+    HEIGHT = 700
+    WIDTH = 700
+    transform = A.Compose(
+        transforms=[
+            A.RandomCrop(height=HEIGHT, width=WIDTH, always_apply=True),
+            A.Resize(height=HEIGHT//2, width=WIDTH//2, always_apply=True),
+            A.Flip(p=0.5),
+            A.Rotate(
+                limit=(-15, 15),
+                interpolation=1,
+                border_mode=0,
+                value=0,
+                mask_value=0,
+                always_apply=False,
+                p=0.5,
+            ),
+            A.ColorJitter(
+                brightness=0.3,
+                contrast=0.5,
+                saturation=0.5,
+                hue=0.2,
+                always_apply=False,
+                p=0.5,
+            ),
+            A.ChannelShuffle(p=0.2),
+            A.RGBShift(r_shift_limit=50, g_shift_limit=50, b_shift_limit=50, p=0.5),
+            A.HueSaturationValue(
+                hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20, p=0.5
+            ),
+            # A.Normalize(mean=((0.4780, 0.4116, 0.3001)), std=(0.4995, 0.4921, 0.4583)),
+        ],
+        p=1.0,
+    )
     train_image = args['train_path']
     val_image = args['val_path']
     yaml_path = args['yaml_path']
@@ -205,7 +230,8 @@ if __name__ == '__main__':
     torch.set_grad_enabled(True)
 
     # scheduler: optimizer, step size, gamma
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, 0.85)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, epoch_step, gamma)
+
 
     for i in tqdm(range(train_dsal.num_batches)):
 
@@ -214,18 +240,18 @@ if __name__ == '__main__':
             accuracy = total_correct / total
             print(f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}')
             current_loss, current_accuracy = evaluate(model, val_batches, device, criterion, epoch)
-
+            
             if current_accuracy > best_accuracy:
                 best_accuracy = current_accuracy
                 best_epoch = epoch
-
-                save_path = best_save_name
+                save_path = r'/home/adeeb.hossain1/Classification/saved_models/en_b6_1000_.pth'
                 torch.save(model, save_path)
 
             if current_loss < best_loss:
                 best_loss = current_loss
-
+            
             print(f'Best epoch: {best_epoch}, Best Loss: {best_loss:6.4f}, Best Accuracy: {best_accuracy:6.4f}')
+            # get_last_lr()
             model.train()
 
             total = 0
@@ -239,10 +265,16 @@ if __name__ == '__main__':
             unfreeze(model)
 
         image, label = train_dsal.get_item()
+        label = label.type(torch.int64)
         image, label = image.to(device), label.to(device)
+
+
 
         optimizer.zero_grad()
         outputs = model(image)
+
+        # outputs = outputs.type(torch.float32)
+        # outputs.dtype=float32
         loss = criterion(outputs, label)
 
         if epoch < unfreeze_epoch:
@@ -262,6 +294,7 @@ if __name__ == '__main__':
 
     print(f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}')
     evaluate(model, val_batches, device, criterion, epoch)
+
 
     train_dsal.join()
 
