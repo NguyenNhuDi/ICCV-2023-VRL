@@ -15,22 +15,29 @@ import albumentations.pytorch
 from DSAL import DSAL
 
 # this is how you find mean and std
-# image, label = train_dsal.get_item()
-#
-# channels_sum += torch.mean(image, dim=[0, 2, 3])
-# channels_squared_sum += torch.mean(image ** 2, dim=[0, 2, 3])
-# num_batches += 1
-#
-# counter += 1
-#
-# mean = channels_sum / num_batches
-# std = (channels_sum / num_batches - mean ** 2) ** 0.5
-#
-# print(mean)
-# print(std)
+    # channels_sum, channels_squared_sum, num_batches = 0, 0, 0
+
+    # for i in tqdm(range(train_dsal.num_batches)):
+
+
+
+    #     image, label = train_dsal.get_item()
+        
+    #     channels_sum += torch.mean(image, dim=[0, 2, 3])
+    #     channels_squared_sum += torch.mean(image ** 2, dim=[0, 2, 3])
+    #     num_batches += 1
+        
+    #     counter += 1
+        
+    # mean = channels_sum / num_batches
+    # std = (channels_sum / num_batches - mean ** 2) ** 0.5
+    
+    # print(mean)
+    # print(std)
 
 def transform_image_label(image_path, label, transform):
-    out_image = np.array(Image.open(image_path), dtype=np.float32) /255.0
+    out_image = np.array(Image.open(image_path), dtype='uint8') 
+
 
     if label == 'unfertilized':
         out_label = 0
@@ -118,6 +125,7 @@ if __name__ == '__main__':
 
     HEIGHT = 700
     WIDTH = 700
+
     transform = A.Compose(
         transforms=[
             A.RandomCrop(height=HEIGHT, width=WIDTH, always_apply=True),
@@ -133,11 +141,10 @@ if __name__ == '__main__':
                 p=0.5,
             ),
             A.ColorJitter(
-                brightness=0.3,
+                brightness=0.4,
                 contrast=0.5,
-                saturation=0.5,
                 hue=0.2,
-                always_apply=False,
+                always_apply=True,
                 p=0.5,
             ),
             A.ChannelShuffle(p=0.2),
@@ -145,10 +152,12 @@ if __name__ == '__main__':
             A.HueSaturationValue(
                 hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20, p=0.5
             ),
-            # A.Normalize(mean=((0.4780, 0.4116, 0.3001)), std=(0.4995, 0.4921, 0.4583)),
+            A.Normalize(mean=((0.5385, 0.4641, 0.3378)), std=(0.5385, 0.4641, 0.3378))
+            # A.pytorch.transforms.ToTensorV2()
         ],
         p=1.0,
     )
+
     train_image = args['train_path']
     val_image = args['val_path']
     yaml_path = args['yaml_path']
@@ -232,6 +241,7 @@ if __name__ == '__main__':
     # scheduler: optimizer, step size, gamma
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, epoch_step, gamma)
 
+    channels_sum, channels_squared_sum, num_batches = 0, 0, 0
 
     for i in tqdm(range(train_dsal.num_batches)):
 
@@ -244,8 +254,8 @@ if __name__ == '__main__':
             if current_accuracy > best_accuracy:
                 best_accuracy = current_accuracy
                 best_epoch = epoch
-                save_path = r'/home/adeeb.hossain1/Classification/saved_models/en_b6_1000_.pth'
-                torch.save(model, save_path)
+                
+                torch.save(model, best_save_name)
 
             if current_loss < best_loss:
                 best_loss = current_loss
