@@ -1,15 +1,16 @@
 {
-  "train_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\train_image",
-  "val_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\val_image",
-  "yaml_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\labels_trainval.yml",
-  "batch_size": 32,
-  "epochs": 80,
-  "num_processes":  40,
-  "learning_rate": 0.025,
-  "momentum": 0.9,
-  "unfreeze_epoch": 3,
-  "epoch_step": 10,
-  "gamma": 0.85,
-  "best_save_name": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/saved_models/en_b6_40_2021.pth",
-  "last_save_name": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/saved_models/en_b6_40_2021_last.pth"
-}
+    "train_path": "/home/adeeb.hossain1/Classification/combined_dataset/train_image",
+    "val_path": "/home/adeeb.hossain1/Classification/combined_dataset/val_image",
+    "yaml_path": "/home/adeeb.hossain1/Classification/combined_dataset/updated_yml.yml",
+    "batch_size": 16,
+    "epochs": 100,
+    "num_processes":  20,
+    "learning_rate": 0.01,
+    "momentum": 0.9,
+    "unfreeze_epoch": 3,
+    "epoch_step": 10,
+    "gamma": 0.85,
+    "best_save_name": "/home/adeeb.hossain1/Classification/saved_models/en_b6_100_efficient_net_combined_.pth",
+    "last_save_name": "/home/adeeb.hossain1/Classification/saved_models/en_b6_100_efficient_net_combined_.pth_last",
+    "model_to_load": "/home/adeeb.hossain1/Classification/saved_models/en_b6_50_efficient_net_combined_.pth"
+  }
