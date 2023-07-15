@@ -1,8 +1,11 @@
 import math
 import os
 import shutil
-import random
+from PIL import Image
+import numpy as np
+import yaml
 from tqdm import tqdm
+import albumentations as A
 
 
 # this program will split training and validator apart
@@ -22,62 +25,152 @@ def get_image_paths(images_text, image_path):
 
 
 def copy_images(src, dst):
-    for i in src:
+    for i in tqdm(src):
         shutil.copy(i, dst)
 
 
+def tile_and_update_yml(image_paths, save_path, yml_dict):
+    # indexes = []
+    # for i in range(8):
+    #     for (j) in range(8):
+    #         indexes.append((i, j))
+    #
+    # random_indexes = indexes.copy()
+    # np.random.shuffle(random_indexes)
+
+    transform = A.Compose(transforms=[
+        A.Resize(1024, 1024)
+    ])
+
+    for i in tqdm(image_paths):
+        path = i[0]
+        name = os.path.basename(path)
+        class_name = i[1]
+
+        image = np.array(Image.open(path))
+
+        augmented = transform(image=image)
+        image = augmented['image']
+
+        # save the current image
+        Image.fromarray(image).save(os.path.join(save_path, name))
+
+        # tile it now
+
+        # generating the tuples
+
+        # augment_pos = []
+        #
+        # for index in range(len(indexes)):
+        #     original_col_index = indexes[index][0]
+        #     original_row_index = indexes[index][1]
+        #
+        #     new_col_index = random_indexes[index][0]
+        #     new_row_index = random_indexes[index][1]
+        #
+        #     augment_pos.append((new_col_index * 128, new_row_index * 128,
+        #                         original_col_index * 128, original_row_index * 128,
+        #                         128, 128))
+
+        # augment_pos = np.array(augment_pos)
+
+        # image = A.augmentations.functional.swap_tiles_on_image(image, augment_pos)
+
+        # new_name = f'{name[:-4]}_tiled.jpg'
+
+        # Image.fromarray(image).save(os.path.join(save_path, new_name))
+
+        # add the names to yaml file
+        yml_dict[0][name] = class_name
+        # yml_dict[0][new_name] = class_name
+
+
 def save_images(text_image_val,
-                image_dir,
                 text_test,
-                test_im_save_dir,
-                val_im_save_dir,
-                train_im_save_dir):
+                image_dir,
+                test_save,
+                val_save,
+                train_save,
+                yml_path,
+                yml_dict):
     train_val_path = get_image_paths(text_image_val, image_dir)
     test_paths = get_image_paths(text_test, image_dir)
 
-    copy_images(test_paths, test_im_save_dir)
+    with open(yml_path, 'r') as f:
+        labels = yaml.load(f, Loader=yaml.FullLoader)
 
-    train_val_len = len(train_val_path)
-
-    no_repeat = set()
-    val_amount = math.floor(train_val_len * 0.15)
-
-    while True:
-        if len(no_repeat) == val_amount:
-            break
-        no_repeat.add(random.randint(0, train_val_len - 1))
+    labels_dict = {
+        'unfertilized': [],
+        '_PKCa': [],
+        'N_KCa': [],
+        'NP_Ca': [],
+        'NPK_': [],
+        'NPKCa': [],
+        'NPKCa+m+s': []
+    }
 
     val_paths = []
     train_paths = []
 
-    for i in tqdm(range(train_val_len)):
-        if i in no_repeat:
-            val_paths.append(train_val_path[i])
-        else:
-            train_paths.append(train_val_path[i])
+    for i in train_val_path:
+        curr_im = os.path.basename(i)
+        labels_dict[labels[curr_im]].append(i)
 
-    print(val_paths)
+    for label in labels_dict:
+        labels_dict[label] = np.array(labels_dict[label])
+        np.random.shuffle(labels_dict[label])
 
-    copy_images(val_paths, val_im_save_dir)
-    copy_images(train_paths, train_im_save_dir)
+    for label in labels_dict:
+        curr_len = math.floor(len(labels_dict[label]) * 0.152)
+        for i in range(curr_len):
+            curr_item = labels_dict[label][i]
+            val_paths.append((curr_item, label))
+            labels_dict[label] = np.delete(labels_dict[label], np.where(labels_dict[label] == curr_item))
+
+    for label in labels_dict:
+        for i in labels_dict[label]:
+            train_paths.append((i, label))
+
+    tile_and_update_yml(val_paths, val_save, yml_dict)
+    tile_and_update_yml(train_paths, train_save, yml_dict)
+
+    copy_images(test_paths, test_save)
+
+    # writing the new yml
+    # with open(yml_save, 'w') as file:
+    #     d = yaml.dump(yml_dict, file)
+    #
+    return yml_dict
 
 
 if __name__ == '__main__':
-    images_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\images'
-    train_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\train_image'
-    test_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\test_image'
-    val_im_save_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\val_image'
+    _21_tv_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\trainval.txt'
+    _21_test_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\test.txt'
+    _21_images_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\images'
+    _21_yml_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\labels_trainval.yml'
 
-    image_val_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\trainval.txt'
-    test_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\test.txt'
+    _20_tv_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\trainval.txt'
+    _20_test_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\test.txt'
+    _20_images_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\images'
+    _20_yml_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\labels_trainval.yml'
 
-    images_path_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\images'
-    image_val_text_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\trainval.txt'
-    test_text_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\test.txt'
+    test_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\combined set\test_image'
+    val_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\combined set\val_image'
+    train_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\combined set\train_image'
+    yml_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\combined set\updated_yml.yml'
 
-    train_im_save_path_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\train_image'
-    test_im_save_path_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\test_image'
-    val_im_save_path_ = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\val_image'
+    yml_dict = [{}]
 
-    save_images(image_val_text, images_path, test_text, test_im_save_path, val_im_save_path, train_im_save_path)
-    save_images(image_val_text_, images_path_, test_text_, test_im_save_path_, val_im_save_path_, train_im_save_path_)
+    yml_dict = save_images(_21_tv_text, _21_test_text,
+                           _21_images_path, test_save_dir,
+                           val_save_dir, train_save_dir,
+                           _21_yml_path, yml_dict)
+
+    yml_dict = save_images(_20_tv_text, _20_test_text,
+                           _20_images_path, test_save_dir,
+                           val_save_dir, train_save_dir,
+                           _20_yml_path, yml_dict)
+
+    with open(yml_save_dir, 'w') as file:
+        d = yaml.dump(yml_dict, file)
+
