@@ -123,40 +123,32 @@ if __name__ == '__main__':
     with open(args.config) as f:
         args = json.load(f)
 
-    HEIGHT = 700
-    WIDTH = 700
+    HEIGHT = 600
+    WIDTH = 600
 
     transform = A.Compose(
         transforms=[
             A.RandomCrop(height=HEIGHT, width=WIDTH, always_apply=True),
-            A.Resize(height=HEIGHT//2, width=WIDTH//2, always_apply=True),
+            A.Normalize(mean=((0.5385, 0.4641, 0.3378)), std=(0.5385, 0.4641, 0.3378)),
+            A.GaussNoise(),
             A.Flip(p=0.5),
             A.Rotate(
-                limit=(-15, 15),
+                limit=(-90, 90),
                 interpolation=1,
                 border_mode=0,
                 value=0,
                 mask_value=0,
                 always_apply=False,
-                p=0.5,
+                p=0.75,
             ),
-            A.ColorJitter(
-                brightness=0.4,
-                contrast=0.5,
-                hue=0.2,
-                always_apply=True,
-                p=0.5,
-            ),
-            A.ChannelShuffle(p=0.2),
-            A.RGBShift(r_shift_limit=50, g_shift_limit=50, b_shift_limit=50, p=0.5),
-            A.HueSaturationValue(
-                hue_shift_limit=20, sat_shift_limit=30, val_shift_limit=20, p=0.5
-            ),
-            A.Normalize(mean=((0.5385, 0.4641, 0.3378)), std=(0.5385, 0.4641, 0.3378))
+            A.RandomContrast(limit=[0.3,0.8], p=0.5),
+            A.RGBShift(r_shift_limit=[10,80], g_shift_limit=[10, 50], b_shift_limit=[10, 80], p=0.5)
+
             # A.pytorch.transforms.ToTensorV2()
         ],
         p=1.0,
     )
+
 
     train_image = args['train_path']
     val_image = args['val_path']
@@ -171,9 +163,19 @@ if __name__ == '__main__':
     gamma = args['gamma']
     best_save_name = args['best_save_name']
     last_save_name = args['last_save_name']
+    model_to_load = args['model_to_load']
 
     with open(yaml_path, 'r') as f:
         labels = yaml.safe_load(f)
+
+    train_transform = A.Compose(
+        transforms=[
+            A.RandomCrop(height=HEIGHT, width=WIDTH, always_apply=True),
+            A.Normalize(mean=((0.5385, 0.4641, 0.3378)), std=(0.5385, 0.4641, 0.3378))
+        ],
+        p=1.0,
+    )
+
 
     val_dsal = DSAL(val_image,
                     labels,
@@ -182,14 +184,14 @@ if __name__ == '__main__':
                     epochs=1,
                     num_processes=num_processes,
                     max_queue_size=num_processes * 2,
-                    transform=transform)
+                    transform=train_transform)
 
     val_dsal.start()
 
     # storing valid batches in memory
 
     val_batches = []
-    for i in tqdm(range(val_dsal.num_batches)):
+    for i in range(val_dsal.num_batches):
         val_batches.append(val_dsal.get_item())
 
     val_dsal.join()
@@ -208,13 +210,14 @@ if __name__ == '__main__':
     print('pathing finished')
 
     # declaring the model
-    model = models.efficientnet_b6(pretrained=True)
+    model = torch.load(model_to_load)
+    # model = models.efficientnet_b6(pretrained=True)
 
-    model.classifier = nn.Sequential(
-        nn.Dropout(p=0.5, inplace=True),
-        nn.Linear(in_features=2304, out_features=256),
-        nn.Linear(in_features=256, out_features=7)
-    )
+    # model.classifier = nn.Sequential(
+    #     nn.Dropout(p=0.5, inplace=True),
+    #     nn.Linear(in_features=2304, out_features=256),
+    #     nn.Linear(in_features=256, out_features=7)
+    # )
 
     freeze(model)
 
@@ -243,7 +246,7 @@ if __name__ == '__main__':
 
     channels_sum, channels_squared_sum, num_batches = 0, 0, 0
 
-    for i in tqdm(range(train_dsal.num_batches)):
+    for i in range(train_dsal.num_batches):
 
         if counter == batches_per_epoch:
             total_loss = total_loss / total

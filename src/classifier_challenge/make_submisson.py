@@ -53,7 +53,7 @@ def generate(model_path, test_image_dir, file_name):
                              (0.4995, 0.4921, 0.4583))
     ])
 
-    model = torch.load(model_path)
+    model = torch.load(model_path, batch_size)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device)
 
@@ -62,7 +62,6 @@ def generate(model_path, test_image_dir, file_name):
 
     counter = 0
     batch_counter = 0
-    batch_size = 16
 
     temp_img = []
     temp_name = []
@@ -118,6 +117,5 @@ if __name__ == '__main__':
     _20_test_dir = r'/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/test_image'
     _21_test_dir = r'/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/test_image'
 
-    generate(_20_model_path, _20_test_dir, _20_save_name)
-    generate(_21_model_path, _21_test_dir, _21_save_name)
-
+    generate(_20_model_path, _20_test_dir, _20_save_name, 16)
+    generate(_21_model_path, _21_test_dir, _21_save_name, 16)
