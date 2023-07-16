@@ -109,24 +109,8 @@ def evaluate(model, val_batches, device, criterion, epoch):
 
 # TODO write train loop
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-        prog='Echo Extractor',
-        description='This program will train ICCV23 challenge with efficient net',
-        epilog='Vision Research Lab')
-    parser.add_argument('-c', '--config', required=True,
-                        help='The path to the config file.')
-
-    args = parser.parse_args()
-
-    with open(args.config) as f:
-        args = json.load(f)
-
-    HEIGHT = 700
-    WIDTH = 700
-
-    transform = A.Compose(
+def get_train_transform():
+    return A.Compose(
         transforms=[
             A.RandomCrop(height=HEIGHT, width=WIDTH, always_apply=True),
             A.Resize(height=HEIGHT//2, width=WIDTH//2, always_apply=True),
@@ -158,6 +142,36 @@ if __name__ == '__main__':
         p=1.0,
     )
 
+def get_val_transform():
+    return A.Compose(
+        transforms=[
+            A.RandomCrop(height=HEIGHT, width=WIDTH, always_apply=True),
+            A.Resize(height=HEIGHT//2, width=WIDTH//2, always_apply=True),
+            A.Normalize(mean=((0.5385, 0.4641, 0.3378)), std=(0.5385, 0.4641, 0.3378))
+        ],
+        p=1.0,
+    )
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        prog='Echo Extractor',
+        description='This program will train ICCV23 challenge with efficient net',
+        epilog='Vision Research Lab')
+    parser.add_argument('-c', '--config', required=True,
+                        help='The path to the config file.')
+
+    args = parser.parse_args()
+
+    with open(args.config) as f:
+        args = json.load(f)
+
+    HEIGHT = 700
+    WIDTH = 700
+
+    train_transform = get_train_transform()
+    val_transforms = get_val_transform()
+
     train_image = args['train_path']
     val_image = args['val_path']
     yaml_path = args['yaml_path']
@@ -182,7 +196,7 @@ if __name__ == '__main__':
                     epochs=1,
                     num_processes=num_processes,
                     max_queue_size=num_processes * 2,
-                    transform=transform)
+                    transform=val_transforms)
 
     val_dsal.start()
 
@@ -201,7 +215,7 @@ if __name__ == '__main__':
                       epochs=epochs,
                       num_processes=num_processes,
                       max_queue_size=num_processes * 2,
-                      transform=transform)
+                      transform=train_transform)
 
     print('starting pathing...')
     train_dsal.start()
@@ -213,6 +227,7 @@ if __name__ == '__main__':
     model.classifier = nn.Sequential(
         nn.Dropout(p=0.5, inplace=True),
         nn.Linear(in_features=2304, out_features=256),
+        nn.ReLU(),
         nn.Linear(in_features=256, out_features=7)
     )
 
