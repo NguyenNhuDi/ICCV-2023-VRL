@@ -164,8 +164,8 @@ if __name__ == '__main__':
                 always_apply=False,
                 p=0.75,
             ),
-            A.RandomContrast(limit=[0.3, 0.8], p=0.5),
-            A.RGBShift(r_shift_limit=[10, 80], g_shift_limit=[10, 50], b_shift_limit=[10, 80], p=0.5)
+            # A.RandomContrast(limit=[0.3, 0.8], p=0.5),
+            # A.RGBShift(r_shift_limit=[10, 80], g_shift_limit=[10, 50], b_shift_limit=[10, 80], p=0.5)
 
             # A.pytorch.transforms.ToTensorV2()
         ],
