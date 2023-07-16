@@ -13,17 +13,20 @@ import yaml
 from tqdm import tqdm
 from DSAL import DSAL
 import os
-
+import albumentations as A
 
 def read_image(image_path, transform):
-    out_image = Image.open(image_path)
+    out_image = np.array(Image.open(image_path))
     image_name = os.path.basename(image_path)
 
     if transform is not None:
-        out_image = transform(out_image)
+        augmented = transform(image=out_image)
+        out_image = augmented['image']
+        
+    # converting the image and mask into tensors
 
+    out_image = torch.from_numpy(out_image).permute(2,0,1)
     return out_image, image_name
-
 
 def evaluate(model, val_batches, device):
     model.eval()
@@ -38,22 +41,31 @@ def evaluate(model, val_batches, device):
             outputs = model(image)
             for i in range(len(outputs)):
                 prediction_index = torch.argmax(outputs[i]).cpu().numpy()
+                
+
 
     # loss = total_loss / total
     # accuracy = total_correct / total
 
 
-def generate(model_path, test_image_dir, file_name):
+
+def generate(model_path, test_image_dir, batch_size):
+    
+
     img_dir = np.array(glob.glob(f'{test_image_dir}/*.jpg'))
 
-    transform = transforms.Compose([
-        transforms.Resize((500, 500)),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4780, 0.4116, 0.3001),
-                             (0.4995, 0.4921, 0.4583))
-    ])
 
-    model = torch.load(model_path, batch_size)
+    HEIGHT = 600
+    WIDTH = 600
+    transform = A.Compose(
+        transforms=[
+            A.RandomCrop(height=HEIGHT, width=WIDTH, always_apply=True),
+            A.Normalize(mean=((0.5385, 0.4641, 0.3378)), std=(0.5385, 0.4641, 0.3378))
+        ],
+        p=1.0,
+    )
+
+    model = torch.load(model_path)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device)
 
@@ -67,7 +79,7 @@ def generate(model_path, test_image_dir, file_name):
     temp_name = []
 
     for i in tqdm(range(len(img_dir))):
-        image, image_name = read_image(img_dir[i], transform=transform)
+        image, image_name = read_image(img_dir[i],transform=transform)
 
         temp_img.append(image)
         temp_name.append(image_name)
@@ -77,21 +89,25 @@ def generate(model_path, test_image_dir, file_name):
         if batch_counter == batch_size:
             temp_img = torch.stack(temp_img, dim=0)
 
+
             image_batch.append(temp_img)
             name_batch.append(temp_name)
             temp_img = []
             temp_name = []
 
             batch_counter = 0
+        
+    if len(temp_img) > 0:
+        temp_img = torch.stack(temp_img, dim=0)
 
-    temp_img = torch.stack(temp_img, dim=0)
+        image_batch.append(temp_img)
+        name_batch.append(temp_name)
 
-    image_batch.append(temp_img)
-    name_batch.append(temp_name)
 
-    prediction = []
+    predictions_20 = []
+    predictions_21 = []
 
-    for i in range(len(image_batch)):
+    for i in tqdm(range(len(image_batch))):
         image = image_batch[i].to(device)
         output = model(image)
 
@@ -99,23 +115,30 @@ def generate(model_path, test_image_dir, file_name):
             name = name_batch[i][j]
             prediction = int(torch.argmax(output[j]).cpu().numpy())
 
-        prediction.append((name, prediction))
+            if name[0:4] == '2020':
+                predictions_20.append((name, prediction))
+            else:
+                predictions_21.append((name, prediction))
 
-    f = open(file_name, 'w')
 
-    for i in prediction:
+    f = open('predictions_WW2020.txt', 'w')
+
+    for i in predictions_20:
         f.write(f'{i[0]} {i[1]}\n')
 
+    f.close()
+
+    f = open('predictions_WR2021.txt', 'w')
+             
+    for i in predictions_21:
+        f.write(f'{i[0]} {i[1]}\n')
+    
+    f.close()
 
 if __name__ == '__main__':
-    _20_save_name = 'predictions_WW2020.txt'
-    _21_save_name = 'predictions_WR2021.txt'
 
-    _20_model_path = r''
-    _21_model_path = r''
+    model_path = r'/home/nhu.nguyen2/ICCV_2023/classifier_challenge/saved_models/en2_l_140_combined_ALBUMENTATION_LAST.pth'
 
-    _20_test_dir = r'/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/test_image'
-    _21_test_dir = r'/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/test_image'
+    test_dir = r'/home/nhu.nguyen2/ICCV_2023/classifier_challenge/combined/test_image'
 
-    generate(_20_model_path, _20_test_dir, _20_save_name, 16)
-    generate(_21_model_path, _21_test_dir, _21_save_name, 16)
+    generate(model_path, test_dir, 8)
