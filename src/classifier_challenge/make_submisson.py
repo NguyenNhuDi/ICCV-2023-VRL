@@ -22,10 +22,10 @@ def read_image(image_path, transform):
     if transform is not None:
         augmented = transform(image=out_image)
         out_image = augmented['image']
-        
+
     # converting the image and mask into tensors
 
-    out_image = torch.from_numpy(out_image).permute(2,0,1)
+    out_image = torch.from_numpy(out_image).permute(2, 0, 1)
     return out_image, image_name
 
 def evaluate(model, val_batches, device):
@@ -48,18 +48,15 @@ def evaluate(model, val_batches, device):
     # accuracy = total_correct / total
 
 
-
-def generate(model_path, test_image_dir, batch_size):
-    
-
+def generate(model_path, test_image_dir, batch_size, height, width):
     img_dir = np.array(glob.glob(f'{test_image_dir}/*.jpg'))
-
-
     HEIGHT = 600
     WIDTH = 600
+
     transform = A.Compose(
         transforms=[
             A.RandomCrop(height=HEIGHT, width=WIDTH, always_apply=True),
+            A.Resize(height, width),
             A.Normalize(mean=((0.5385, 0.4641, 0.3378)), std=(0.5385, 0.4641, 0.3378))
         ],
         p=1.0,
@@ -100,9 +97,11 @@ def generate(model_path, test_image_dir, batch_size):
     if len(temp_img) > 0:
         temp_img = torch.stack(temp_img, dim=0)
 
+    if len(temp_img) > 0:
+        temp_img = torch.stack(temp_img, dim=0)
+
         image_batch.append(temp_img)
         name_batch.append(temp_name)
-
 
     predictions_20 = []
     predictions_21 = []
@@ -120,7 +119,6 @@ def generate(model_path, test_image_dir, batch_size):
             else:
                 predictions_21.append((name, prediction))
 
-
     f = open('predictions_WW2020.txt', 'w')
 
     for i in predictions_20:
@@ -129,16 +127,35 @@ def generate(model_path, test_image_dir, batch_size):
     f.close()
 
     f = open('predictions_WR2021.txt', 'w')
-             
+
     for i in predictions_21:
         f.write(f'{i[0]} {i[1]}\n')
-    
+
     f.close()
 
+
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        prog='Echo Extractor',
+        description='This program will train ICCV23 challenge with efficient net',
+        epilog='Vision Research Lab')
+    parser.add_argument('-c', '--config', required=True,
+                        help='The path to the config file.')
 
-    model_path = r'/home/nhu.nguyen2/ICCV_2023/classifier_challenge/saved_models/en2_l_140_combined_ALBUMENTATION_LAST.pth'
+    args = parser.parse_args()
 
-    test_dir = r'/home/nhu.nguyen2/ICCV_2023/classifier_challenge/combined/test_image'
+    with open(args.config) as f:
+        args = json.load(f)
 
-    generate(model_path, test_dir, 8)
+    model_path = args['model_path']
+    test_dir = args['test_dir']
+    batch_size = args['batch_size']
+    height = args['height']
+    width = args['height']
+
+    generate(model_path, test_dir, batch_size, height, width)
+
+
+
+
+

@@ -1,0 +1,7 @@
+{
+    "model_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/saved_models/res_net_152_400_combined_ALBUMENTATION_BEST.pth",
+    "test_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/combined/test_image",
+    "batch_size": 8,
+    "height": 224,
+    "width": 224
+}
