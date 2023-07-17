@@ -143,7 +143,7 @@ if __name__ == '__main__':
         transforms=[
             A.RandomCrop(height=HEIGHT, width=WIDTH, always_apply=True),
             A.Resize(image_size, image_size),
-            A.Normalize(mean=((0.5385, 0.4641, 0.3378)), std=(0.5385, 0.4641, 0.3378))
+            A.Normalize(mean=((119.4355, 103.2000, 73.3788)), std=(48.2443, 42.6188, 38.1264))
         ],
         p=1.0,
     )
@@ -152,7 +152,7 @@ if __name__ == '__main__':
         transforms=[
             A.RandomCrop(height=HEIGHT, width=WIDTH, always_apply=True),
             A.Resize(image_size, image_size),
-            A.Normalize(mean=((0.5385, 0.4641, 0.3378)), std=(0.5385, 0.4641, 0.3378)),
+            A.Normalize(mean=((119.4355, 103.2000, 73.3788)), std=(48.2443, 42.6188, 38.1264)),
             A.GaussNoise(),
             A.Flip(p=0.5),
             A.Rotate(
