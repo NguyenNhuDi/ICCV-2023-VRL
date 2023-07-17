@@ -15,17 +15,38 @@ from DSAL import DSAL
 import os
 import albumentations as A
 
-def read_image(image_path, transform):
-    out_image = np.array(Image.open(image_path))
-    image_name = os.path.basename(image_path)
+def read_image(image_dir):
+    # out_image = np.array(Image.open(image_path), dtype='float32') / 255.0
+    out_paths = []
+    for i in tqdm(image_dir):
+        image_name = os.path.basename(i)
+        out_paths.append((np.array(Image.open(i), dtype='uint8'), image_name))
+    return out_paths
+
+
+
+def process_image(image, transform, crop):
+    out_image = image[0]
+    if crop == 0:
+        out_image = out_image[0:600, 0:600]
+    elif crop == 1:
+        out_image = out_image[-600: 600, 0:600]
+    elif crop == 2:
+        out_image = out_image[0:600, -600:600]
+    elif crop == 3:
+        out_image = out_image[212:-212, 212:-212]
+    else:
+        out_image = out_image[-600:600, -600:600]
+
+    image_name = image[1]
 
     if transform is not None:
         augmented = transform(image=out_image)
         out_image = augmented['image']
-
+        
     # converting the image and mask into tensors
 
-    out_image = torch.from_numpy(out_image).permute(2, 0, 1)
+    out_image = torch.from_numpy(out_image).permute(2,0,1)
     return out_image, image_name
 
 def evaluate(model, val_batches, device):
@@ -48,16 +69,12 @@ def evaluate(model, val_batches, device):
     # accuracy = total_correct / total
 
 
-def generate(model_path, test_image_dir, batch_size, height, width):
-    img_dir = np.array(glob.glob(f'{test_image_dir}/*.jpg'))
-    HEIGHT = 600
-    WIDTH = 600
 
+def generate(model_path, images_arr, batch_size , height, width, predict_dict, crop):
     transform = A.Compose(
         transforms=[
-            A.RandomCrop(height=HEIGHT, width=WIDTH, always_apply=True),
             A.Resize(height, width),
-            A.Normalize(mean=((119.4355, 103.2000, 73.3788)), std=(48.2443, 42.6188, 38.1264))
+            A.Normalize(mean=((0.5385, 0.4641, 0.3378)), std=(0.5385, 0.4641, 0.3378))
         ],
         p=1.0,
     )
@@ -75,8 +92,8 @@ def generate(model_path, test_image_dir, batch_size, height, width):
     temp_img = []
     temp_name = []
 
-    for i in tqdm(range(len(img_dir))):
-        image, image_name = read_image(img_dir[i],transform=transform)
+    for i in tqdm(range(len(images_arr))):
+        image, image_name = process_image(images_arr[i],transform, crop)
 
         temp_img.append(image)
         temp_name.append(image_name)
@@ -97,14 +114,8 @@ def generate(model_path, test_image_dir, batch_size, height, width):
     if len(temp_img) > 0:
         temp_img = torch.stack(temp_img, dim=0)
 
-    if len(temp_img) > 0:
-        temp_img = torch.stack(temp_img, dim=0)
-
         image_batch.append(temp_img)
         name_batch.append(temp_name)
-
-    predictions_20 = []
-    predictions_21 = []
 
     for i in tqdm(range(len(image_batch))):
         image = image_batch[i].to(device)
@@ -114,27 +125,35 @@ def generate(model_path, test_image_dir, batch_size, height, width):
             name = name_batch[i][j]
             prediction = int(torch.argmax(output[j]).cpu().numpy())
 
-            if name[0:4] == '2020':
-                predictions_20.append((name, prediction))
+            if name in predict_dict:
+                predict_dict[name][prediction] += 1
             else:
-                predictions_21.append((name, prediction))
+                predict_dict[name] = [0 for i in range(7)]
+                predict_dict[name][prediction] += 1
 
-    f = open('predictions_WW2020.txt', 'w')
+    return predict_dict
 
-    for i in predictions_20:
-        f.write(f'{i[0]} {i[1]}\n')
 
-    f.close()
+    # f = open('predictions_WW2020.txt', 'w')
 
-    f = open('predictions_WR2021.txt', 'w')
+    # for i in predictions_20:
+    #     f.write(f'{i[0]} {i[1]}\n')
 
-    for i in predictions_21:
-        f.write(f'{i[0]} {i[1]}\n')
+    # f.close()
 
-    f.close()
+    # f = open('predictions_WR2021.txt', 'w')
+             
+    # for i in predictions_21:
+    #     f.write(f'{i[0]} {i[1]}\n')
+    
+    # f.close()
+
+
+
 
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(
         prog='Echo Extractor',
         description='This program will train ICCV23 challenge with efficient net',
@@ -152,10 +171,45 @@ if __name__ == '__main__':
     batch_size = args['batch_size']
     height = args['height']
     width = args['height']
+    save_path = args['save_path']
 
-    generate(model_path, test_dir, batch_size, height, width)
+    test_dir = np.array(glob.glob(f'{test_dir}/*.jpg'))
+    images = read_image(test_dir)
+
+    predict_dict = {}
+
+    predict_dict = generate(model_path, images, batch_size, height, width, predict_dict, 0)
+    predict_dict = generate(model_path, images, batch_size, height, width, predict_dict, 1)
+    predict_dict = generate(model_path, images, batch_size, height, width, predict_dict, 2)
+    predict_dict = generate(model_path, images, batch_size, height, width, predict_dict, 3)
+    predict_dict = generate(model_path, images, batch_size, height, width, predict_dict, 4)
 
 
 
+    predictions_20 = []
+    predictions_21 = []
 
+    for key in predict_dict:
+        curr_item = np.array(predict_dict[key])
+        prediction = np.argmax(curr_item)
 
+        if key[0:4] == '2020':
+            predictions_20.append((key, prediction))
+        else:
+            predictions_21.append((key, prediction))
+
+    f = open(os.path.join(save_path, 'predictions_WW2020.txt'), 'w')
+
+    for i in predictions_20:
+        f.write(f'{i[0]} {i[1]}\n')
+
+    f.close()
+
+    f = open(os.path.join(save_path, 'predictions_WR2021.txt'), 'w')
+             
+    for i in predictions_21:
+        f.write(f'{i[0]} {i[1]}\n')
+    
+    f.close()
+
+    
