@@ -1,0 +1,8 @@
+{
+    "model_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/saved_models/efficient_net_b6_400_combined_ALBUMENTATION_BEST.pth", 
+    "test_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/combined/test_image",
+    "save_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/test_predict",
+    "batch_size": 8,
+    "height": 528,
+    "width": 528
+}
