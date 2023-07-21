@@ -8,12 +8,17 @@ import numpy as np
 def read_prediction(file_path, predict_dict):
     with open(file_path, 'r') as predictions:
         for prediction in predictions:
-            name, class_num = prediction.split()
+            n = prediction.find(' ')
+            weights = prediction[n:]
+            name = prediction[0:n]
+
+            weights = eval(weights)
 
             if name not in predict_dict:
                 predict_dict[name] = [0 for i in range(7)]
 
-            predict_dict[name][int(class_num)] += 1
+            for i in range(len(weights)):
+                predict_dict[name][i] += int(weights[i])
 
 
 def write_prediction(file, predict_dict):

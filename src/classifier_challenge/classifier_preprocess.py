@@ -154,17 +154,17 @@ if __name__ == '__main__':
     _20_images_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\images'
     _20_yml_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\labels_trainval.yml'
 
-    test_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\combined set\test_image'
-    val_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\combined set\val_image'
-    train_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\combined set\train_image'
-    yml_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\combined set\updated_yml.yml'
+    test_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\test_image'
+    val_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\val_image'
+    train_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\train_image'
+    yml_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\updated_yml.yml'
 
     yml_dict = [{}]
 
-    yml_dict = save_images(_21_tv_text, _21_test_text,
-                           _21_images_path, test_save_dir,
-                           val_save_dir, train_save_dir,
-                           _21_yml_path, yml_dict)
+    # yml_dict = save_images(_21_tv_text, _21_test_text,
+    #                        _21_images_path, test_save_dir,
+    #                        val_save_dir, train_save_dir,
+    #                        _21_yml_path, yml_dict)
 
     yml_dict = save_images(_20_tv_text, _20_test_text,
                            _20_images_path, test_save_dir,

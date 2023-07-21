@@ -1,16 +1,11 @@
 {
   "predictions": [
-    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\Submit_1",
-    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\Submit_2",
-    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\Submit_3",
-    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\Submit_4",
-    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\Submit_5",
-    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\Submit_6",
-    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\Submit_7",
-    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\Submit_8",
-    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\Submit_9",
-    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\Submit_10"
+    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\ensemble_learning_weigthed\\efficient_net",
+    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\ensemble_learning_weigthed\\google_net",
+    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\ensemble_learning_weigthed\\resnet",
+    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\ensemble_learning_weigthed\\resnext",
+    "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\ensemble_learning_weigthed\\shuffle_net"
   ],
 
-  "save_dir": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\dont submit its a test"
+  "save_dir": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\ICCV-2023-VRL\\Submisions\\ensemble_learning_weigthed"
 }
