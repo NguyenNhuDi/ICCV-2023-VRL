@@ -196,7 +196,6 @@ class DSAL:
 
         # storing parameters
         self.image_dir = np.array(images)
-
         # check to see if this is a path to masks or label csv
         if not gen_submision:
             self.yml = list(yml)

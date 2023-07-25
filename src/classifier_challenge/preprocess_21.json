@@ -7,7 +7,10 @@
                 "21_01.csv",
                 "21_02.csv",
                 "21_03.csv",
-                "21_04.csv"
+                "21_04.csv",
+                "21_06.csv",
+                "21_07.csv",
+                "unmatched_papaya.csv"
                 ],
   "yaml_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\labels_trainval.yml"
 }

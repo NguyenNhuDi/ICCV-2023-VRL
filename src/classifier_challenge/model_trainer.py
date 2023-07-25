@@ -9,6 +9,7 @@ from torch import nn
 import pandas as pd
 import warnings
 from tqdm import tqdm
+import math
 
 warnings.filterwarnings("ignore")
 
@@ -86,10 +87,14 @@ class ModelTrainer:
             data_dict_20 = df.to_dict(orient='list')
 
             for image in data_dict_20['val']:
-                val_set.append(os.path.join(self.image_dir_20, image))
+                image = str(image)
+                if image != 'nan':
+                    val_set.append(os.path.join(self.image_dir_20, image))
 
             for image in data_dict_20['train']:
-                train_set.append(os.path.join(self.image_dir_20, image))
+                image = str(image)
+                if image != 'nan':
+                    train_set.append(os.path.join(self.image_dir_20, image))
 
         # get the 2021 train and val set
         if self.csv_21 is not None:
@@ -97,10 +102,14 @@ class ModelTrainer:
             data_dict_21 = df.to_dict(orient='list')
 
             for image in data_dict_21['val']:
-                val_set.append(os.path.join(self.image_dir_21, image))
+                image = str(image)
+                if image != 'nan':
+                    val_set.append(os.path.join(self.image_dir_21, image))
 
             for image in data_dict_21['train']:
-                train_set.append(os.path.join(self.image_dir_21, image))
+                image = str(image)
+                if image != 'nan':
+                    train_set.append(os.path.join(self.image_dir_21, image))
 
         val_dsal = DSAL(val_set,
                         self.labels,
@@ -114,7 +123,7 @@ class ModelTrainer:
         val_batches = []
         val_dsal.start()
 
-        for i in range(val_dsal.num_batches):
+        for i in tqdm(range(val_dsal.num_batches)):
             val_batches.append(val_dsal.get_item())
 
         val_dsal.join()
