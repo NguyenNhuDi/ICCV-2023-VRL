@@ -13,6 +13,22 @@ class ModelChooser:
         # Efficient Net
         # TODO add the rest of efficient net family
 
+        self.efficientnet_b0 = models.efficientnet_b0(pretrained=True)
+
+        self.efficientnet_b0.classifier = nn.Sequential(
+            nn.Dropout(p=0.5, inplace=True),
+            nn.Linear(in_features=1280, out_features=256),
+            nn.Linear(in_features=256, out_features=7)
+        )
+
+        self.efficientnet_b1 = models.efficientnet_b1(pretrained=True)
+
+        self.efficientnet_b1.classifier = nn.Sequential(
+            nn.Dropout(p=0.5, inplace=True),
+            nn.Linear(in_features=1280, out_features=256),
+            nn.Linear(in_features=256, out_features=7)
+        )
+
         self.efficientnet_b6 = models.efficientnet_b6(pretrained=True)
 
         self.efficientnet_b6.classifier = nn.Sequential(
