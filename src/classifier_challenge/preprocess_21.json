@@ -1,0 +1,13 @@
+{
+  "img_dir": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\images",
+  "test_text": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\test.txt",
+  "train_val_txt_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\trainval.txt",
+  "save_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\CSVS",
+  "save_name": ["21_00.csv",
+                "21_01.csv",
+                "21_02.csv",
+                "21_03.csv",
+                "21_04.csv"
+                ],
+  "yaml_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\labels_trainval.yml"
+}

@@ -1,176 +1,113 @@
 import math
-import os
-import shutil
-from PIL import Image
-import numpy as np
+
 import yaml
-from tqdm import tqdm
-import albumentations as A
+import argparse
+import json
+import numpy as np
+import pandas as pd
+import os
 
 
-# this program will split training and validator apart
+class LabelConverter:
+    def __init__(self, img_dir,
+                 test_path,
+                 train_val_path,
+                 save_pth,
+                 save_name,
+                 yml_path,
+                 split_percent=20):
 
-def get_image_paths(images_text, image_path):
-    out = []
+        with open(yml_path, 'r') as file:
+            self.labels = yaml.safe_load(file)
 
-    with open(images_text, 'r') as f:
-        image_names = f
+        self.image_dir = img_dir
+        self.test_path = test_path
+        self.train_val_path = train_val_path
+        self.save_path = save_pth
+        self.save_name = save_name
+        self.save_dict = {'train': [],
+                          'val': [],
+                          'test': []}
+        self.split_percent = split_percent
 
-        for i in image_names:
-            if '\n' in i:
-                i = i[:-1]
-            curr_img = os.path.join(image_path, i)
-            out.append(curr_img)
-    return out
+    def __call__(self):
+        self.__label_to_csv__()
 
+    def __label_to_csv__(self):
+        # putting the test images into the test set
 
-def copy_images(src, dst):
-    for i in tqdm(src):
-        shutil.copy(i, dst)
+        with open(self.test_path, 'r') as test_file:
+            test_names = test_file
 
+            for i in test_names:
 
-def tile_and_update_yml(image_paths, save_path, yml_dict):
-    # indexes = []
-    # for i in range(8):
-    #     for (j) in range(8):
-    #         indexes.append((i, j))
-    #
-    # random_indexes = indexes.copy()
-    # np.random.shuffle(random_indexes)
+                if '\n' in i:
+                    i = i[:-1]
+                self.save_dict['test'].append(i)
 
-    transform = A.Compose(transforms=[
-        A.Resize(1024, 1024)
-    ])
+        labels_dict = {}
 
-    for i in tqdm(image_paths):
-        path = i[0]
-        name = os.path.basename(path)
-        class_name = i[1]
+        # sort the images into labels to get even split
 
-        image = np.array(Image.open(path))
+        for name in self.labels:
+            curr_class = self.labels[name]
+            if curr_class not in labels_dict:
+                labels_dict[curr_class] = []
+            labels_dict[curr_class].append(name)
 
-        augmented = transform(image=image)
-        image = augmented['image']
+        for curr_class in labels_dict:
+            np.random.shuffle(labels_dict[curr_class])
 
-        # save the current image
-        Image.fromarray(image).save(os.path.join(save_path, name))
+            # putting the first 20% of images into val set
 
-        # tile it now
+            counter = 0
+            index_counter = 0
 
-        # generating the tuples
+            val_len = math.floor((len(labels_dict[curr_class]) / 100) * self.split_percent)
+            while counter < val_len:
+                self.save_dict['val'].append(labels_dict[curr_class][index_counter])
+                counter += 1
+                index_counter += 1
 
-        # augment_pos = []
-        #
-        # for index in range(len(indexes)):
-        #     original_col_index = indexes[index][0]
-        #     original_row_index = indexes[index][1]
-        #
-        #     new_col_index = random_indexes[index][0]
-        #     new_row_index = random_indexes[index][1]
-        #
-        #     augment_pos.append((new_col_index * 128, new_row_index * 128,
-        #                         original_col_index * 128, original_row_index * 128,
-        #                         128, 128))
+            # putting the rest of the images into train set
+            counter = 0
+            while counter < len(labels_dict[curr_class]) - val_len:
+                self.save_dict['train'].append(labels_dict[curr_class][index_counter])
+                counter += 1
+                index_counter += 1
+        # making the dictionary sub arrays lengths the same
 
-        # augment_pos = np.array(augment_pos)
+        val_diff = len(self.save_dict['train']) - len(self.save_dict['val'])
+        test_diff = len(self.save_dict['train']) - len(self.save_dict['test'])
 
-        # image = A.augmentations.functional.swap_tiles_on_image(image, augment_pos)
+        self.save_dict['val'] += [None for i in range(val_diff)]
+        self.save_dict['test'] += [None for i in range(test_diff)]
 
-        # new_name = f'{name[:-4]}_tiled.jpg'
-
-        # Image.fromarray(image).save(os.path.join(save_path, new_name))
-
-        # add the names to yaml file
-        yml_dict[0][name] = class_name
-        # yml_dict[0][new_name] = class_name
-
-
-def save_images(text_image_val,
-                text_test,
-                image_dir,
-                test_save,
-                val_save,
-                train_save,
-                yml_path,
-                yml_dict):
-    train_val_path = get_image_paths(text_image_val, image_dir)
-    test_paths = get_image_paths(text_test, image_dir)
-
-    with open(yml_path, 'r') as f:
-        labels = yaml.load(f, Loader=yaml.FullLoader)
-
-    labels_dict = {
-        'unfertilized': [],
-        '_PKCa': [],
-        'N_KCa': [],
-        'NP_Ca': [],
-        'NPK_': [],
-        'NPKCa': [],
-        'NPKCa+m+s': []
-    }
-
-    val_paths = []
-    train_paths = []
-
-    for i in train_val_path:
-        curr_im = os.path.basename(i)
-        labels_dict[labels[curr_im]].append(i)
-
-    for label in labels_dict:
-        labels_dict[label] = np.array(labels_dict[label])
-        np.random.shuffle(labels_dict[label])
-
-    for label in labels_dict:
-        curr_len = math.floor(len(labels_dict[label]) * 0.152)
-        for i in range(curr_len):
-            curr_item = labels_dict[label][i]
-            val_paths.append((curr_item, label))
-            labels_dict[label] = np.delete(labels_dict[label], np.where(labels_dict[label] == curr_item))
-
-    for label in labels_dict:
-        for i in labels_dict[label]:
-            train_paths.append((i, label))
-
-    tile_and_update_yml(val_paths, val_save, yml_dict)
-    tile_and_update_yml(train_paths, train_save, yml_dict)
-
-    copy_images(test_paths, test_save)
-
-    # writing the new yml
-    # with open(yml_save, 'w') as file:
-    #     d = yaml.dump(yml_dict, file)
-    #
-    return yml_dict
+        df = pd.DataFrame(self.save_dict)
+        df.to_csv(os.path.join(self.save_path, self.save_name), index=False)
 
 
-if __name__ == '__main__':
-    _21_tv_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\trainval.txt'
-    _21_test_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\test.txt'
-    _21_images_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\images'
-    _21_yml_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WR2021\labels_trainval.yml'
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog='Winter Wheat, Winter Rye Classifier pre process',
+        description='This program will create different val and train set for classification of winter wheat and '
+                    'winter rye based on a  and hash function',
+        epilog='Vision Research Lab')
 
-    _20_tv_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\trainval.txt'
-    _20_test_text = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\test.txt'
-    _20_images_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\images'
-    _20_yml_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\labels_trainval.yml'
+    parser.add_argument('-c', '--config', required=True,
+                        help='The path to the config file')
+    args = parser.parse_args()
 
-    test_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\test_image'
-    val_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\val_image'
-    train_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\train_image'
-    yml_save_dir = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\DND-Diko-WWWR\WW2020\updated_yml.yml'
+    with open(args.config) as f:
+        args = json.load(f)
 
-    yml_dict = [{}]
+    image_dir = args['img_dir']
+    test_txt_path = args['test_text']
+    train_val_txt_path = args['train_val_txt_path']
+    save_path = args['save_path']
+    save_file_name = args['save_name']
+    yaml_path = args['yaml_path']
 
-    # yml_dict = save_images(_21_tv_text, _21_test_text,
-    #                        _21_images_path, test_save_dir,
-    #                        val_save_dir, train_save_dir,
-    #                        _21_yml_path, yml_dict)
-
-    yml_dict = save_images(_20_tv_text, _20_test_text,
-                           _20_images_path, test_save_dir,
-                           val_save_dir, train_save_dir,
-                           _20_yml_path, yml_dict)
-
-    with open(yml_save_dir, 'w') as file:
-        d = yaml.dump(yml_dict, file)
-
+    for name in save_file_name:
+        converter = LabelConverter(image_dir, test_txt_path, train_val_txt_path, save_path, name, yaml_path)
+        converter()

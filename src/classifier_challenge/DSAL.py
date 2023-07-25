@@ -13,7 +13,7 @@ import torch
 DSAL (Dataset and loader)
     This clas will transform and batch images/masks/labels for machine learning tasks
     To use this class, make sure to define a function that will read and transform your images/labels
-    this function should have the (img_dir, label_obj, transform) as parameters
+    this function should have the (image_dir, label_obj, transform) as parameters
 
     If DSAL is used for csv label reading, simply pass in the absolute path to the label csv into the
     yml parameter slot
@@ -21,7 +21,7 @@ DSAL (Dataset and loader)
 
 Attributes
 ----------------------------------------------------------------
-    img_dir : np.array
+    image_dir : np.array
         a numpy array holding all the path of the images
 
     yml : np.array
@@ -80,7 +80,7 @@ Methods
 
         parameters:
 
-            img_dir : str
+            image_dir : str
                 the absolute path to the directory containing the images
 
             yml : str
@@ -89,7 +89,7 @@ Methods
             read_and_transform_function : function
                 the function that the user wrote to read a image and label path and
                 apply transformations to it. The parameters should be in the form
-                (img_dir, yml, transform). It should also return the transformed
+                (image_dir, yml, transform). It should also return the transformed
                 image and label
 
             batch_size : int, optional
@@ -180,7 +180,7 @@ Methods
 
 class DSAL:
 
-    def __init__(self, image_dir,
+    def __init__(self, images,
                  yml,
                  read_and_transform_function,
                  batch_size=1,
@@ -195,7 +195,7 @@ class DSAL:
         assert num_processes >= 1, 'The number of processes entered is <= 0'
 
         # storing parameters
-        self.image_dir = np.array(glob.glob(f'{image_dir}/*.jpg'))
+        self.image_dir = np.array(images)
 
         # check to see if this is a path to masks or label csv
         if not gen_submision:
@@ -373,68 +373,3 @@ class DSAL:
             time.sleep(0.01)
             return self.get_item()
 
-# def read_and_transform(image_path, mask_path, transform=None):
-#     image = cv2.imread(image_path, cv2.COLOR_BGR2RGB)
-#     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-
-#     # converting the type of number from int to float and turn the pixels into the range [0,1]
-#     image = np.array(image, dtype=np.float32) / 255.0
-#     mask = np.array(mask, dtype=np.float32) / 255.0
-
-#     # applying the transformations
-#     if transform is not None:
-#         augmented = transform(image=image, mask=mask)
-#         image = augmented['image']
-#         mask = augmented['mask']
-
-#     # converting the image and mask into tensors
-#     image = torch.from_numpy(image).permute(2, 1, 0)
-#     mask = torch.from_numpy(mask).unsqueeze(0)
-
-#     return image, mask
-
-#
-# if __name__ == '__main__':
-#
-#     image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\image'
-#     mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\SMH SMH\mask'
-#     # image_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\images'
-#     # mask_path = r'C:\Users\coanh\Desktop\Uni Work\ICCV 2023\PhenoBench\train\leaf_instances'
-#
-#     transform = A.Compose([
-#         A.Resize(256, 256),
-#         A.HorizontalFlip(p=0.5),
-#         A.VerticalFlip(p=0.5),
-#         A.RandomRotate90(p=0.5),
-#         A.HueSaturationValue()
-#     ])
-#
-#     epochs = 4
-#     num_processes = 6
-#     batch_size = 32
-#
-#     test_dataset = DSAL(image_path,
-#                         mask_path,
-#                         read_and_transform,
-#                         batch_size=batch_size,
-#                         epochs=epochs,
-#                         num_processes=num_processes,
-#                         max_queue_size=num_processes * 3,
-#                         transform=transform)
-#
-#     print('starting....')
-#     test_dataset.start()
-#
-#     print("starting finished\nbegin testing...")
-#
-#     start = time.time_ns()
-#     for i in range(test_dataset.num_batches):
-#         image, mask = test_dataset.get_item()
-#         print(f'Iteration: {i}, shape: {mask.shape}, queue size: {test_dataset.image_mask_queue.qsize()}')
-#         # MUMBO JUMBO CODE JUST TESTING THE SPEED OF HOW FAST WE CAN GET IMAGE
-#
-#     end = time.time_ns()
-#
-#     test_dataset.join()
-#
-#     print(end - start)
