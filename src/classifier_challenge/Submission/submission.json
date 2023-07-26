@@ -1,0 +1,10 @@
+{
+    "models_paths": [
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/test new/efficient_net/20_tuning_last.pth"],
+    "test_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/Test Images",
+    "save_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/test new/efficient_net",
+    "batch_size": 8,
+    "height": 528,
+    "width": 528,
+    "run_amount": 7
+}

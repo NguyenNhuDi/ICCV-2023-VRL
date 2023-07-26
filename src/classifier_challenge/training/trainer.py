@@ -2,6 +2,14 @@ from model_trainer import ModelTrainer
 import argparse
 import json
 import albumentations as A
+import os
+
+
+def check_is_none(item):
+    if item.lower() == 'none' or item == '':
+        return None
+    return item
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -18,6 +26,11 @@ if __name__ == '__main__':
     yaml_path = args['yaml_path']
     best_save_name = args['best_save_name']
     last_save_name = args['last_save_name']
+    save_dir = args['save_dir']
+
+    best_save_name = os.path.join(save_dir, best_save_name)
+    last_save_name = os.path.join(save_dir, last_save_name)
+
     image_size = args['image_size']
     batch_size = args['batch_size']
     epochs = args['epochs']
@@ -28,14 +41,15 @@ if __name__ == '__main__':
     epoch_step = args['epoch_step']
     gamma = args['gamma']
     csv_20 = args['csv_20']
+    csv_20 = check_is_none(csv_20)
     csv_21 = args['csv_21']
+    csv_21 = check_is_none(csv_21)
     image_dir_20 = args['image_dir_20']
+    image_dir_20 = check_is_none(image_dir_20)
     image_dir_21 = args['image_dir_21']
+    image_dir_21 = check_is_none(image_dir_21)
     model_to_load = args['model_to_load']
-
-    if model_to_load.lower() == 'none' or model_to_load == '':
-        model_to_load = None
-
+    model_to_load = check_is_none(model_to_load)
     model = args['model']
     model_name = args['model_name']
 
@@ -45,7 +59,7 @@ if __name__ == '__main__':
         transforms=[
             A.RandomCrop(height=CROP_SIZE, width=CROP_SIZE, always_apply=True),
             A.Resize(image_size, image_size),
-            A.Normalize(mean=(0.4680, 0.4038, 0.2885), std=(0.2476, 0.2107, 0.1931))
+            A.Normalize(mean=((0.4680, 0.4038, 0.2885)), std=(0.2476, 0.2107, 0.1931))
         ],
         p=1.0,
     )
@@ -65,22 +79,31 @@ if __name__ == '__main__':
                 always_apply=False,
                 p=0.75,
             ),
-            A.Normalize(mean=(0.4680, 0.4038, 0.2885), std=(0.2476, 0.2107, 0.1931))
-            # A.OneOf(transforms=[
-            #     # A.RandomFog(0.1,0.3,0.5,p=0.05),
-            #     # A.RandomRain(-20, 20, 50, 1, rain_type='drizzle', p =0.05),
-            #     # A.RandomRain(-20, 20, 50, 1, rain_type='heavy', p = 0.05),
-            #     # A.RandomRain(-20, 20, 50, 1, rain_type='torrential', p = 0.05),
-            #     # A.RandomShadow ((0,0,1,1), 5, 10, p =0.05),
-            #     # A.Sharpen(p=0.05),
-            #     # A.RandomBrightnessContrast((-0.2,0.2), (0.0), p=0.05),
-            #     # A.RandomBrightnessContrast((0,0), (-0.2,0.2), p=0.05),
-            #     # A.ImageCompression(50,100, p=0.05),
-            #     # # A.GaussNoise((0, 0.02), p=0.06),
-            #     # A.ISONoise((0.01,0.1), p=0.07),
-            #     # A.RandomGamma((75,200), p=0.07),
-            #     # A.Blur(p=0.1),
-            #     # A.MotionBlur(p=0.1)
+
+            A.OneOf(transforms=[
+                A.RandomFog(0.1, 0.3, 0.5, p=0.2),
+                A.RandomRain(-20, 20, 50, 1, rain_type='drizzle', p=0.2),
+                A.RandomRain(-20, 20, 50, 1, rain_type='heavy', p=0.2),
+                A.RandomRain(-20, 20, 50, 1, rain_type='torrential', p=0.2),
+                A.RandomShadow((0, 0, 1, 1), 5, 10, p=0.2),
+            ], p=0.3),
+
+            A.OneOf(transforms=[
+                A.Sharpen(p=0.25),
+                A.RandomBrightnessContrast((-0.2, 0.2), (0.0), p=0.25),
+                A.RandomBrightnessContrast((0, 0), (-0.2, 0.2), p=0.25),
+                A.Blur(p=0.125),
+                A.MotionBlur(p=0.125)
+            ], p=0.3),
+
+            A.OneOf(transforms=[
+                A.ImageCompression(50, 100, p=0.25),
+                A.GaussNoise((0, 0.02), p=0.25),
+                A.ISONoise((0.01, 0.1), p=0.25),
+                A.RandomGamma((75, 200), p=0.25),
+            ], p=0.3),
+
+            A.Normalize(mean=((0.4680, 0.4038, 0.2885)), std=(0.2476, 0.2107, 0.1931))
 
             # ],p=0.2),
 
