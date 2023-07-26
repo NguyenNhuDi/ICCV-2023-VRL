@@ -114,6 +114,7 @@ if __name__ == '__main__':
     trainer = ModelTrainer(yaml_path,
                            best_save_name,
                            last_save_name,
+                           save_dir,
                            csv,
                            image_dir_20,
                            image_dir_21,

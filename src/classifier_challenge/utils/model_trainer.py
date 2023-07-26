@@ -19,6 +19,7 @@ class ModelTrainer:
     def __init__(self, yaml_path,
                  best_save_name,
                  last_save_name,
+                 save_dir,
                  csv,
                  image_dir_20,
                  image_dir_21,
@@ -48,6 +49,7 @@ class ModelTrainer:
         self.train_transform = train_transform
         self.val_transform = val_transform
         self.batch_size = batch_size
+        self.save_dir = save_dir
         self.epochs = epochs
         self.weight_decay = weight_decay
         self.num_processes = num_processes
@@ -155,6 +157,8 @@ class ModelTrainer:
 
         torch.set_grad_enabled(True)
 
+        f = open(os.path.join(self.save_dir, 'out.log'), 'w')
+
         # scheduler: optimizer, step size, gamma
         scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, self.epoch_step, self.gamma)
 
@@ -164,8 +168,12 @@ class ModelTrainer:
             if counter == batches_per_epoch:
                 total_loss = total_loss / total
                 accuracy = total_correct / total
-                print(f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}')
-                current_loss, current_accuracy = self.evaluate(val_batches, epoch)
+                message = f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}\n'
+                current_loss, current_accuracy, print_output = self.evaluate(val_batches, epoch)
+                print(message)
+                print(print_output)
+                f.write(message)
+                f.write(print_output)
 
                 if current_accuracy > best_accuracy:
                     best_accuracy = current_accuracy
@@ -176,7 +184,9 @@ class ModelTrainer:
                 if current_loss < best_loss:
                     best_loss = current_loss
 
-                print(f'Best epoch: {best_epoch}, Best Loss: {best_loss:6.4f}, Best Accuracy: {best_accuracy:6.4f}')
+                message = f'Best epoch: {best_epoch}, Best Loss: {best_loss:6.4f}, Best Accuracy: {best_accuracy:6.4f}\n'
+                print(message)
+                f.write(message)
                 # get_last_lr()
                 self.model.train()
 
@@ -213,8 +223,16 @@ class ModelTrainer:
         total_loss = total_loss / total
         accuracy = total_correct / total
 
-        print(f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}')
-        self.evaluate(val_batches, epoch)
+        message = f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}\n'
+        _, _, eval_message = self.evaluate(val_batches, epoch)
+
+        print(message)
+        print(eval_message)
+
+        f.write(message)
+        f.write(eval_message)
+
+        f.close()
 
         train_dsal.join()
 
@@ -282,6 +300,4 @@ class ModelTrainer:
 
         loss = total_loss / total
         accuracy = total_correct / total
-
-        print(f'Evaluate --- Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}')
-        return loss, accuracy
+        return loss, accuracy, f'Evaluate --- Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}\n'
