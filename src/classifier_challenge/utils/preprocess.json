@@ -1,7 +1,4 @@
 {
-  "img_dir": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WW2020\\images",
-  "test_texts": ["C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WW2020\\test.txt",
-  "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\test.txt"],
   "which_months": [3],
   "which_val_set": [1,0],
   "which_train_set": [0],

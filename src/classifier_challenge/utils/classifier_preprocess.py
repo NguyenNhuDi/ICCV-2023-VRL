@@ -9,8 +9,7 @@ import os
 
 
 class LabelConverter:
-    def __init__(self, img_dir,
-                 test_paths,
+    def __init__(self,
                  save_pth,
                  save_name,
                  yml_path,
@@ -23,8 +22,6 @@ class LabelConverter:
             with open(i, 'r') as file:
                 self.labels.update(yaml.safe_load(file))
 
-        self.image_dir = img_dir
-        self.test_paths = test_paths
         self.save_path = save_pth
         self.save_name = save_name
         self.save_dict = {'train': [],
@@ -102,8 +99,6 @@ if __name__ == "__main__":
     with open(args.config) as f:
         args = json.load(f)
 
-    image_dir = args['img_dir']
-    test_txt_path = args['test_texts']
     month_set = args['which_months']
     val_set = args['which_val_set']
     train_set = args['which_train_set']
@@ -112,9 +107,7 @@ if __name__ == "__main__":
     yaml_paths = args['yaml_paths']
 
     for name in save_file_name:
-        converter = LabelConverter(image_dir,
-                                   test_txt_path,
-                                   save_path,
+        converter = LabelConverter(save_path,
                                    name,
                                    yaml_paths,
                                    month_set,
