@@ -1,13 +1,13 @@
 {
   "img_dir": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WW2020\\images",
-  "test_text": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WW2020\\test.txt",
-  "train_val_txt_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WW2020\\trainval.txt",
+  "test_texts": ["C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WW2020\\test.txt",
+  "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\test.txt"],
+  "which_months": [3],
+  "which_val_set": [1,0],
+  "which_train_set": [0],
   "save_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WW2020\\CSVS",
-  "save_name": ["20_00.csv",
-                "20_01.csv",
-                "20_02.csv",
-                "20_03.csv",
-                "20_04.csv"
+  "save_name": ["no_1.csv"
                 ],
-  "yaml_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WW2020\\labels_trainval.yml"
+  "yaml_paths": ["C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WW2020\\labels_trainval.yml",
+  "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\labels_trainval.yml"]
 }
