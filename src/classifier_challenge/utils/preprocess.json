@@ -1,10 +1,9 @@
 {
-  "which_months": [3],
-  "which_val_set": [1,0],
-  "which_train_set": [0],
-  "save_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WW2020\\CSVS",
-  "save_name": ["no_1.csv"
-                ],
-  "yaml_paths": ["C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WW2020\\labels_trainval.yml",
-  "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\labels_trainval.yml"]
-}
+    "save_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV",
+    "save_name": ["01.csv",
+                    "02.csv",
+                    "03.csv",
+                    "04.csv",
+                    "05.csv"],
+    "yaml_paths": ["/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml"]
+  }

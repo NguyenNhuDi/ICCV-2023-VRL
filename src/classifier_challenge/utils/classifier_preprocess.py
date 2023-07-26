@@ -13,9 +13,6 @@ class LabelConverter:
                  save_pth,
                  save_name,
                  yml_path,
-                 months,
-                 vals,
-                 trains,
                  split_percent=20):
         self.labels = {}
         for i in yml_path:
@@ -27,9 +24,6 @@ class LabelConverter:
         self.save_dict = {'train': [],
                           'val': []}
         self.split_percent = split_percent
-        self.months = months
-        self.vals = vals
-        self.trains = trains
 
     def __call__(self):
         self.__label_to_csv__()
@@ -39,8 +33,7 @@ class LabelConverter:
 
         # sort the images into labels to get even split
         for name in self.labels:
-            if int(name[5]) not in self.months:
-                continue
+
             curr_class = self.labels[name]
 
             if curr_class not in labels_dict:
@@ -60,8 +53,8 @@ class LabelConverter:
             while counter < val_len:
                 curr_img = labels_dict[curr_class][index_counter]
 
-                if int(curr_img[3]) in self.vals:
-                    self.save_dict['val'].append(curr_img)
+
+                self.save_dict['val'].append(curr_img)
 
                 counter += 1
                 index_counter += 1
@@ -71,8 +64,7 @@ class LabelConverter:
             while counter < len(labels_dict[curr_class]) - val_len:
                 curr_img = labels_dict[curr_class][index_counter]
 
-                if int(curr_img[3]) in self.trains:
-                    self.save_dict['train'].append(curr_img)
+                self.save_dict['train'].append(curr_img)
                 counter += 1
                 index_counter += 1
         # making the dictionary sub arrays lengths the same
@@ -99,9 +91,6 @@ if __name__ == "__main__":
     with open(args.config) as f:
         args = json.load(f)
 
-    month_set = args['which_months']
-    val_set = args['which_val_set']
-    train_set = args['which_train_set']
     save_path = args['save_path']
     save_file_name = args['save_name']
     yaml_paths = args['yaml_paths']
@@ -109,8 +98,5 @@ if __name__ == "__main__":
     for name in save_file_name:
         converter = LabelConverter(save_path,
                                    name,
-                                   yaml_paths,
-                                   month_set,
-                                   val_set,
-                                   train_set)
+                                   yaml_paths)
         converter()

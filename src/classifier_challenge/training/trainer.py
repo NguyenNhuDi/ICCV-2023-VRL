@@ -37,6 +37,7 @@ if __name__ == '__main__':
     num_processes = args['num_processes']
     learning_rate = args['learning_rate']
     momentum = args['momentum']
+    weight_decay = args['weight_decay']
     unfreeze_epoch = args['unfreeze_epoch']
     epoch_step = args['epoch_step']
     gamma = args['gamma']
@@ -47,6 +48,10 @@ if __name__ == '__main__':
     model_to_load = check_is_none(model_to_load)
     model = args['model']
     model_name = args['model_name']
+
+    months = args['which_months']
+    train = args['which_train_set']
+    val = args['which_val_set']
 
     CROP_SIZE = 750
 
@@ -112,18 +117,22 @@ if __name__ == '__main__':
                            csv,
                            image_dir_20,
                            image_dir_21,
-                           train_transform,
-                           val_transform,
-                           batch_size,
-                           epochs,
-                           num_processes,
-                           learning_rate,
-                           momentum,
-                           unfreeze_epoch,
-                           epoch_step,
-                           gamma,
-                           model_to_load,
-                           model,
-                           model_name
+                           train_transform=train_transform,
+                           val_transform=val_transform,
+                           batch_size=batch_size,
+                           epochs=epochs,
+                           weight_decay=weight_decay,
+                           num_processes=num_processes,
+                           learning_rate=learning_rate,
+                           momentum=momentum,
+                           unfreeze_epoch=unfreeze_epoch,
+                           epoch_step=epoch_step,
+                           gamma=gamma,
+                           model_to_load=model_to_load,
+                           months=months,
+                           val=val,
+                           train=train,
+                           model=model,
+                           model_name=model_name
                            )
     trainer()

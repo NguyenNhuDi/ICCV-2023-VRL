@@ -24,6 +24,7 @@ class ModelTrainer:
                  image_dir_21,
                  train_transform=None,
                  val_transform=None,
+                 weight_decay=0,
                  batch_size=32,
                  epochs=20,
                  num_processes=20,
@@ -33,6 +34,9 @@ class ModelTrainer:
                  epoch_step=10,
                  gamma=0.85,
                  model_to_load=None,
+                 months=[3,4,5],
+                 train=[0,1],
+                 val=[0,1],
                  model='efficientnet_b6',
                  model_name=''):
 
@@ -45,12 +49,16 @@ class ModelTrainer:
         self.val_transform = val_transform
         self.batch_size = batch_size
         self.epochs = epochs
+        self.weight_decay = weight_decay
         self.num_processes = num_processes
         self.unfreeze_epoch = unfreeze_epoch
         self.epoch_step = epoch_step
         self.gamma = gamma
         self.csv = csv
         self.model_name = model_name
+        self.months = months
+        self.train = train
+        self.val = val
 
         with open(yaml_path, 'r') as yaml_file:
             self.labels = yaml.safe_load(yaml_file)
@@ -63,7 +71,7 @@ class ModelTrainer:
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=momentum)
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=momentum, weight_decay=weight_decay)
 
         self.model.to(self.device)
 
@@ -81,19 +89,22 @@ class ModelTrainer:
         for image in data_dict['val']:
             image = str(image)
             if image != 'nan':
-                if image[3] == '0':
-                    val_set.append(os.path.join(self.image_dir_20, image))
-                else:
-                    val_set.append(os.path.join(self.image_dir_21, image))
+                if int(image[5]) in self.months and int(image[3]) in self.val:
+
+                    if image[3] == '0':
+                        val_set.append(os.path.join(self.image_dir_20, image))
+                    else:
+                        val_set.append(os.path.join(self.image_dir_21, image))
 
 
         for image in data_dict['train']:
             image = str(image)
             if image != 'nan':
-                if image[3] == '0':
-                    train_set.append(os.path.join(self.image_dir_20, image))
-                else:
-                    train_set.append(os.path.join(self.image_dir_21, image))
+                if int(image[5]) in self.months and int(image[3]) in self.val:
+                    if image[3] == '0':
+                        train_set.append(os.path.join(self.image_dir_20, image))
+                    else:
+                        train_set.append(os.path.join(self.image_dir_21, image))
 
 
         val_dsal = DSAL(val_set,
