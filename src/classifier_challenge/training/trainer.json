@@ -1,8 +1,8 @@
 {
     "yaml_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml",
-    "best_save_name": "ENb6_20___aug_best",
-    "last_save_name": "ENb6_20___aug_last",
-    "save_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ENb6_20___aug",
+    "best_save_name": "ENb6_01_345_aug_best",
+    "last_save_name": "ENb6_01_345_aug_last",
+    "save_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ENb6_01_345_aug_1",
     "image_size": 528,
     "batch_size": 32,
     "epochs": 50,
@@ -12,11 +12,10 @@
     "unfreeze_epoch": 3,
     "epoch_step": 10,
     "gamma": 0.85,
-    "csv_20": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/CSVS/20_00.csv",
-    "csv_21": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/CSVS/21_00.csv",
+    "csv": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/months345_val01_train01_01.csv",
     "image_dir_20": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images",
     "image_dir_21": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images",
-    "model_to_load": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ENb6_20___aug/ENb6_20__aug_best.pth",
+    "model_to_load": "",
     "model": "efficientnet_b6",
     "model_name": "EFFICIENT NET"
 }

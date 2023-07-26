@@ -40,14 +40,9 @@ if __name__ == '__main__':
     unfreeze_epoch = args['unfreeze_epoch']
     epoch_step = args['epoch_step']
     gamma = args['gamma']
-    csv_20 = args['csv_20']
-    csv_20 = check_is_none(csv_20)
-    csv_21 = args['csv_21']
-    csv_21 = check_is_none(csv_21)
+    csv = args['csv']
     image_dir_20 = args['image_dir_20']
-    image_dir_20 = check_is_none(image_dir_20)
     image_dir_21 = args['image_dir_21']
-    image_dir_21 = check_is_none(image_dir_21)
     model_to_load = args['model_to_load']
     model_to_load = check_is_none(model_to_load)
     model = args['model']
@@ -114,6 +109,9 @@ if __name__ == '__main__':
     trainer = ModelTrainer(yaml_path,
                            best_save_name,
                            last_save_name,
+                           csv,
+                           image_dir_20,
+                           image_dir_21,
                            train_transform,
                            val_transform,
                            batch_size,
@@ -124,10 +122,6 @@ if __name__ == '__main__':
                            unfreeze_epoch,
                            epoch_step,
                            gamma,
-                           csv_20,
-                           csv_21,
-                           image_dir_20,
-                           image_dir_21,
                            model_to_load,
                            model,
                            model_name

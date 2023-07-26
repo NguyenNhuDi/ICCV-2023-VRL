@@ -19,6 +19,9 @@ class ModelTrainer:
     def __init__(self, yaml_path,
                  best_save_name,
                  last_save_name,
+                 csv,
+                 image_dir_20,
+                 image_dir_21,
                  train_transform=None,
                  val_transform=None,
                  batch_size=32,
@@ -29,21 +32,10 @@ class ModelTrainer:
                  unfreeze_epoch=3,
                  epoch_step=10,
                  gamma=0.85,
-                 csv_20=None,
-                 csv_21=None,
-                 image_dir_20=None,
-                 image_dir_21=None,
                  model_to_load=None,
                  model='efficientnet_b6',
                  model_name=''):
 
-        assert csv_20 is not None or csv_21 is not None, 'At least one csv dataset must be passed in'
-
-        if csv_20 is not None:
-            assert image_dir_20 is not None, 'csv_20 is given but not its image directory'
-
-        if csv_21 is not None:
-            assert image_dir_21 is not None, 'csv_21 is given but not its image directory'
 
         self.image_dir_20 = image_dir_20
         self.image_dir_21 = image_dir_21
@@ -57,8 +49,7 @@ class ModelTrainer:
         self.unfreeze_epoch = unfreeze_epoch
         self.epoch_step = epoch_step
         self.gamma = gamma
-        self.csv_20 = csv_20
-        self.csv_21 = csv_21
+        self.csv = csv
         self.model_name = model_name
 
         with open(yaml_path, 'r') as yaml_file:
@@ -78,38 +69,32 @@ class ModelTrainer:
 
     def __call__(self):
 
+        print('Program starting...')
+
         val_set = []
         train_set = []
 
-        # get the 2020 train and val set
-        if self.csv_20 is not None:
-            df = pd.read_csv(self.csv_20)
-            data_dict_20 = df.to_dict(orient='list')
 
-            for image in data_dict_20['val']:
-                image = str(image)
-                if image != 'nan':
+        df = pd.read_csv(self.csv)
+        data_dict = df.to_dict(orient='list')
+
+        for image in data_dict['val']:
+            image = str(image)
+            if image != 'nan':
+                if image[3] == '0':
                     val_set.append(os.path.join(self.image_dir_20, image))
-
-            for image in data_dict_20['train']:
-                image = str(image)
-                if image != 'nan':
-                    train_set.append(os.path.join(self.image_dir_20, image))
-
-        # get the 2021 train and val set
-        if self.csv_21 is not None:
-            df = pd.read_csv(self.csv_21)
-            data_dict_21 = df.to_dict(orient='list')
-
-            for image in data_dict_21['val']:
-                image = str(image)
-                if image != 'nan':
+                else:
                     val_set.append(os.path.join(self.image_dir_21, image))
 
-            for image in data_dict_21['train']:
-                image = str(image)
-                if image != 'nan':
+
+        for image in data_dict['train']:
+            image = str(image)
+            if image != 'nan':
+                if image[3] == '0':
+                    train_set.append(os.path.join(self.image_dir_20, image))
+                else:
                     train_set.append(os.path.join(self.image_dir_21, image))
+
 
         val_dsal = DSAL(val_set,
                         self.labels,
