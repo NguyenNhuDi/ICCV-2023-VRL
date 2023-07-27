@@ -58,7 +58,7 @@ def evaluate(model, val_batches, device):
     # accuracy = total_correct / total
 
 
-def generate(model_path, images_arr, batch_size, height, width, transform, predict_dict):
+def generate(model_path, images_arr, batch_size, transform, predict_dict):
     model = torch.load(model_path)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device)
@@ -164,10 +164,18 @@ if __name__ == '__main__':
         ],
         p=1.0,
     )
-
+    counter = 0
     for model_path in models_paths:
+
+        print(f'\n\n\n ----curr model{counter}---\n\n')
+        counter += 1
+
+
         for i in range(run_amount):
-            predict_dict = generate(model_path, images, batch_size, height, width, predict_dict)
+            
+            print(f'\n\n ---iteration {i}---\n\n')
+
+            predict_dict = generate(model_path, images, batch_size,transform, predict_dict)
 
     predictions_20 = []
     predictions_21 = []
@@ -195,4 +203,3 @@ if __name__ == '__main__':
         f.write(f'{i[0]} {i[1]}\n')
 
     f.close()
-
