@@ -167,7 +167,7 @@ if __name__ == '__main__':
     counter = 0
     for model_path in models_paths:
 
-        print(f'\n\n\n ----curr model{counter}---\n\n')
+        print(f'\n\n\n ----curr model {counter}---\n\n')
         counter += 1
 
 
