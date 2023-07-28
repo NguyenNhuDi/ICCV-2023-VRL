@@ -18,11 +18,23 @@ import albumentations as A
 
 def read_image(image_dir):
     # out_image = np.array(Image.open(image_path), dtype='float32') / 255.0
-    out_paths = []
+    all_months = []
+    march = []
+    april = []
+    may = []
     for i in tqdm(image_dir):
         image_name = os.path.basename(i)
-        out_paths.append((np.array(Image.open(i), dtype='uint8'), image_name))
-    return out_paths
+        curr_item = (np.array(Image.open(i), dtype='uint8'), image_name)
+        all_months.append(curr_item)
+
+        if image_name[5] == '3':
+            march.append(curr_item)
+        elif image_name[5] == '4':
+            april.append(curr_item)
+        else:
+            may.append(curr_item)
+
+    return all_months, march, april, may
 
 
 def process_image(image, transform):
@@ -112,19 +124,20 @@ def generate(model_path, images_arr, batch_size, transform, predict_dict):
 
     return predict_dict
 
-    # f = open('predictions_WW2020.txt', 'w')
 
-    # for i in predictions_20:
-    #     f.write(f'{i[0]} {i[1]}\n')
+def make_prediction(predict_dict, models_paths, images, batch_size, transform):
+    counter = 0
+    for model_path in models_paths:
 
-    # f.close()
+        print(f'\n\n\n ----curr model {os.path.basename(model_path)}---\n\n')
+        counter += 1
 
-    # f = open('predictions_WR2021.txt', 'w')
+        for i in range(run_amount):
+            print(f'\n\n ---iteration {i}---\n\n')
 
-    # for i in predictions_21:
-    #     f.write(f'{i[0]} {i[1]}\n')
+            predict_dict = generate(model_path, images, batch_size, transform, predict_dict)
 
-    # f.close()
+    return predict_dict
 
 
 if __name__ == '__main__':
@@ -141,16 +154,19 @@ if __name__ == '__main__':
     with open(args.config) as f:
         args = json.load(f)
 
-    models_paths = args['models_paths']
+    all_model_paths = args['all_models_paths']
     test_dir = args['test_dir']
     batch_size = args['batch_size']
     height = args['height']
     width = args['height']
     save_path = args['save_path']
     run_amount = args['run_amount']
+    march_models = args['march_models']
+    april_models = args['april_models']
+    may_models = args['may_models']
 
     test_dir = np.array(glob.glob(f'{test_dir}/*.jpg'))
-    images = read_image(test_dir)
+    all_images, march_images, april_images, may_images = read_image(test_dir)
 
     predict_dict = {}
 
@@ -164,18 +180,25 @@ if __name__ == '__main__':
         ],
         p=1.0,
     )
-    counter = 0
-    for model_path in models_paths:
 
-        print(f'\n\n\n ----curr model {counter}---\n\n')
-        counter += 1
+    print(f'\n\n---Running All Month Models---\n\n')
 
+    predict_dict = make_prediction(predict_dict, all_model_paths, all_images, batch_size, transform)
 
-        for i in range(run_amount):
-            
-            print(f'\n\n ---iteration {i}---\n\n')
+    print(f'\n\n---Running March Models---\n\n')
 
-            predict_dict = generate(model_path, images, batch_size,transform, predict_dict)
+    predict_dict = make_prediction(predict_dict, march_models, march_images, batch_size, transform)
+
+    print(f'\n\n---Running April Modles---\n\n')
+
+    predict_dict = make_prediction(predict_dict, april_models, april_images, batch_size, transform)
+
+    for name in predict_dict:
+        print(f'{name} --- {predict_dict[name]}')
+
+    print(f'\n\n---Running May Models---\n\n')
+
+    predict_dict = make_prediction(predict_dict, may_models, may_images, batch_size, transform)
 
     predictions_20 = []
     predictions_21 = []

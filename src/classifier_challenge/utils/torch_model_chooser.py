@@ -13,27 +13,19 @@ class ModelChooser:
         # Efficient Net
         # TODO add the rest of efficient net family
 
-        self.efficientnet_b0 = models.efficientnet_b0(pretrained=True)
-
-        self.efficientnet_b0.classifier = nn.Sequential(
-            nn.Dropout(p=0.5, inplace=True),
-            nn.Linear(in_features=1280, out_features=256),
-            nn.Linear(in_features=256, out_features=7)
-        )
-
-        self.efficientnet_b1 = models.efficientnet_b1(pretrained=True)
-
-        self.efficientnet_b1.classifier = nn.Sequential(
-            nn.Dropout(p=0.5, inplace=True),
-            nn.Linear(in_features=1280, out_features=256),
-            nn.Linear(in_features=256, out_features=7)
-        )
-
         self.efficientnet_b6 = models.efficientnet_b6(pretrained=True)
 
         self.efficientnet_b6.classifier = nn.Sequential(
             nn.Dropout(p=0.5, inplace=True),
             nn.Linear(in_features=2304, out_features=256),
+            nn.Linear(in_features=256, out_features=7)
+        )
+
+        self.efficientnet_b7 = models.efficientnet_b7(pretrained=True)
+
+        self.efficientnet_b7.classifier = nn.Sequential(
+            nn.Dropout(p=0.5, inplace=True),
+            nn.Linear(in_features=2560, out_features=256),
             nn.Linear(in_features=256, out_features=7)
         )
 
@@ -86,6 +78,8 @@ class ModelChooser:
 
         if self.id == 'efficientnet_b6':
             return self.efficientnet_b6
+        elif self.id == 'efficientnet_b7':
+            return self.efficientnet_b7
         elif self.id == 'googlenet':
             return self.googlenet
         elif self.id == 'resnet152':

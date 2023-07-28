@@ -35,12 +35,11 @@ class ModelTrainer:
                  epoch_step=10,
                  gamma=0.85,
                  model_to_load=None,
-                 months=[3,4,5],
-                 train=[0,1],
-                 val=[0,1],
+                 months=[3, 4, 5],
+                 train=[0, 1],
+                 val=[0, 1],
                  model='efficientnet_b6',
                  model_name=''):
-
 
         self.image_dir_20 = image_dir_20
         self.image_dir_21 = image_dir_21
@@ -73,7 +72,8 @@ class ModelTrainer:
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=momentum, weight_decay=weight_decay)
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=momentum,
+                                         weight_decay=weight_decay)
 
         self.model.to(self.device)
 
@@ -83,7 +83,6 @@ class ModelTrainer:
 
         val_set = []
         train_set = []
-
 
         df = pd.read_csv(self.csv)
         data_dict = df.to_dict(orient='list')
@@ -98,7 +97,6 @@ class ModelTrainer:
                     else:
                         val_set.append(os.path.join(self.image_dir_21, image))
 
-
         for image in data_dict['train']:
             image = str(image)
             if image != 'nan':
@@ -107,7 +105,6 @@ class ModelTrainer:
                         train_set.append(os.path.join(self.image_dir_20, image))
                     else:
                         train_set.append(os.path.join(self.image_dir_21, image))
-
 
         val_dsal = DSAL(val_set,
                         self.labels,
@@ -134,12 +131,14 @@ class ModelTrainer:
                           num_processes=self.num_processes,
                           max_queue_size=self.num_processes * 2,
                           transform=self.train_transform)
+        f = open(os.path.join(self.save_dir, 'out.log'), 'w')
 
         print('starting pathing...')
         train_dsal.start()
         print('pathing finished')
 
         print(f'\n\n\n------------{self.model_name}--------------\n\n\n')
+        f.write(f'\n\n\n------------{self.model_name}--------------\n\n\n')
 
         self.freeze()
 
@@ -157,8 +156,6 @@ class ModelTrainer:
 
         torch.set_grad_enabled(True)
 
-        f = open(os.path.join(self.save_dir, 'out.log'), 'w')
-
         # scheduler: optimizer, step size, gamma
         scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, self.epoch_step, self.gamma)
 
@@ -168,7 +165,7 @@ class ModelTrainer:
             if counter == batches_per_epoch:
                 total_loss = total_loss / total
                 accuracy = total_correct / total
-                message = f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}\n'
+                message = f'Training --- Epoch: {epoch}, Loss: {total_loss:6.8f}, Accuracy: {accuracy:6.8f}\n'
                 current_loss, current_accuracy, print_output = self.evaluate(val_batches, epoch)
                 print(message)
                 print(print_output)
@@ -184,7 +181,7 @@ class ModelTrainer:
                 if current_loss < best_loss:
                     best_loss = current_loss
 
-                message = f'Best epoch: {best_epoch}, Best Loss: {best_loss:6.4f}, Best Accuracy: {best_accuracy:6.4f}\n'
+                message = f'Best epoch: {best_epoch}, Best Loss: {best_loss:6.8f}, Best Accuracy: {best_accuracy:6.8f}\n'
                 print(message)
                 f.write(message)
                 # get_last_lr()
@@ -223,7 +220,7 @@ class ModelTrainer:
         total_loss = total_loss / total
         accuracy = total_correct / total
 
-        message = f'Training --- Epoch: {epoch}, Loss: {total_loss:6.4f}, Accuracy: {accuracy:6.4f}\n'
+        message = f'Training --- Epoch: {epoch}, Loss: {total_loss:6.8f}, Accuracy: {accuracy:6.8f}\n'
         _, _, eval_message = self.evaluate(val_batches, epoch)
 
         print(message)
@@ -300,4 +297,4 @@ class ModelTrainer:
 
         loss = total_loss / total
         accuracy = total_correct / total
-        return loss, accuracy, f'Evaluate --- Epoch: {epoch}, Loss: {loss:6.4f}, Accuracy: {accuracy:6.4f}\n'
+        return loss, accuracy, f'Evaluate --- Epoch: {epoch}, Loss: {loss:6.8f}, Accuracy: {accuracy:6.8f}\n'

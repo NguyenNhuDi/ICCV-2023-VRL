@@ -1,10 +1,12 @@
 {
-    "models_paths": [
-        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/test new/efficient_net/20_tuning_last.pth"],
+    "all_models_paths": [],
     "test_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/Test Images",
-    "save_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/test new/efficient_net",
+    "save_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Predictions/Months_0_WD",
     "batch_size": 8,
     "height": 528,
     "width": 528,
+    "march_models": ["/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/b6_01_3_aug_1/ENb6_01_3_aug_best"],
+    "april_models": ["/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/b6_01_4_aug_2/Weight Decay Test/0/ENb6_01_4_aug_best"],
+    "may_models": ["/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/b6_01_5_aug_3/ENb6_01_5_aug_best"],
     "run_amount": 7
 }
