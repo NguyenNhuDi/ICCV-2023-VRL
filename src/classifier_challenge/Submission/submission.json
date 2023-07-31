@@ -1,12 +1,51 @@
 {
-    "all_models_paths": [],
+    "all_models_paths": [
+
+],
     "test_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/Test Images",
-    "save_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Predictions/Months_0_WD",
+    "save_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Predictions/Month_based_el",
     "batch_size": 8,
-    "height": 528,
-    "width": 528,
-    "march_models": ["/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/b6_01_3_aug_1/ENb6_01_3_aug_best"],
-    "april_models": ["/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/b6_01_4_aug_2/Weight Decay Test/0/ENb6_01_4_aug_best"],
-    "may_models": ["/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/b6_01_5_aug_3/ENb6_01_5_aug_best"],
-    "run_amount": 7
+    "all_month_sizes": [],
+    "march_sizes": [528,528,528,528,528,224,224,224,224,224,224,224],
+    "april_sizes": [528,528,528,528,528, 224],
+    "may_sizes": [528,528,528,528,528,224,224,224,224,224,224,224],
+    "march_models": [
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/march/en_all_aug_1_last",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/march/en_all_aug_2_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/march/en_all_aug_3_last",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/march/en_all_aug_4_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/march/en_all_aug_5_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Resnet/Ensemble Learning/march/rn_all_aug_1_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Resnet/Ensemble Learning/march/rn_all_aug_3_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Resnet/Ensemble Learning/march/rn_all_aug_5_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Shuffle Net/Ensemble Learning/march/sn_all_aug_2_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Shuffle Net/Ensemble Learning/march/sn_all_aug_3_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Shuffle Net/Ensemble Learning/march/sn_all_aug_4_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Shuffle Net/Ensemble Learning/march/sn_all_aug_5_best"
+
+    ],
+    "april_models": [
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/april/en_all_aug_1_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/april/en_all_aug_2_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/april/en_all_aug_3_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/april/en_all_aug_4_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/april/en_all_aug_5_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Resnet/Ensemble Learning/april/rn_all_aug_3_best"
+    ],
+    "may_models": [
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/may/en_all_aug_1_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/may/en_all_aug_2_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/may/en_all_aug_3_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/may/en_all_aug_4_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/ensemble_learning/may/en_all_aug_5_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Resnet/Ensemble Learning/may/rn_all_aug_1_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Resnet/Ensemble Learning/may/rn_all_aug_2_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Resnet/Ensemble Learning/may/rn_all_aug_3_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Resnet/Ensemble Learning/may/rn_all_aug_4_last",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Resnet/Ensemble Learning/may/rn_all_aug_5_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Shuffle Net/Ensemble Learning/may/sn_all_aug_1_best",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Shuffle Net/Ensemble Learning/may/sn_all_aug_3_best"
+
+    ],
+    "run_amount": 9
 }

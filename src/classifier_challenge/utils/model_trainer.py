@@ -35,11 +35,13 @@ class ModelTrainer:
                  epoch_step=10,
                  gamma=0.85,
                  model_to_load=None,
-                 months=[3, 4, 5],
-                 train=[0, 1],
-                 val=[0, 1],
+                 months=[3,4,5],
+                 train=[0,1],
+                 val=[0,1],
                  model='efficientnet_b6',
-                 model_name=''):
+                 model_name='',
+                 out_name='out.log'):
+
 
         self.image_dir_20 = image_dir_20
         self.image_dir_21 = image_dir_21
@@ -60,11 +62,14 @@ class ModelTrainer:
         self.months = months
         self.train = train
         self.val = val
+        self.out_name = out_name
+        self.momentum = momentum
+        self.learning_rate = learning_rate
 
         with open(yaml_path, 'r') as yaml_file:
             self.labels = yaml.safe_load(yaml_file)
 
-        if model_to_load is not None:
+        if model_to_load != '':
             self.model = torch.load(model_to_load)
         else:
             model_chooser = ModelChooser(model)
@@ -72,10 +77,11 @@ class ModelTrainer:
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=momentum,
-                                         weight_decay=weight_decay)
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=momentum, weight_decay=weight_decay)
 
         self.model.to(self.device)
+
+        print(f'momentum: {momentum} --- gamma: {gamma} --- learning rate: {learning_rate} --- weight decay: {weight_decay}')
 
     def __call__(self):
 
@@ -83,6 +89,7 @@ class ModelTrainer:
 
         val_set = []
         train_set = []
+
 
         df = pd.read_csv(self.csv)
         data_dict = df.to_dict(orient='list')
@@ -97,6 +104,7 @@ class ModelTrainer:
                     else:
                         val_set.append(os.path.join(self.image_dir_21, image))
 
+
         for image in data_dict['train']:
             image = str(image)
             if image != 'nan':
@@ -105,6 +113,7 @@ class ModelTrainer:
                         train_set.append(os.path.join(self.image_dir_20, image))
                     else:
                         train_set.append(os.path.join(self.image_dir_21, image))
+
 
         val_dsal = DSAL(val_set,
                         self.labels,
@@ -131,7 +140,9 @@ class ModelTrainer:
                           num_processes=self.num_processes,
                           max_queue_size=self.num_processes * 2,
                           transform=self.train_transform)
-        f = open(os.path.join(self.save_dir, 'out.log'), 'w')
+        f = open(os.path.join(self.save_dir, self.out_name), 'w')
+
+        f.write(f'momentum: {self.momentum} --- gamma: {self.gamma} --- learning rate: {self.learning_rate} --- weight decay: {self.weight_decay}')
 
         print('starting pathing...')
         train_dsal.start()
@@ -155,6 +166,7 @@ class ModelTrainer:
         best_epoch = 0
 
         torch.set_grad_enabled(True)
+
 
         # scheduler: optimizer, step size, gamma
         scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, self.epoch_step, self.gamma)

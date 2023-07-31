@@ -11,7 +11,6 @@ import json
 from PIL import Image
 import yaml
 from tqdm import tqdm
-from DSAL import DSAL
 import os
 import albumentations as A
 
@@ -125,9 +124,19 @@ def generate(model_path, images_arr, batch_size, transform, predict_dict):
     return predict_dict
 
 
-def make_prediction(predict_dict, models_paths, images, batch_size, transform):
+def make_prediction(predict_dict, models_paths, images, batch_size, image_size):
     counter = 0
     for model_path in models_paths:
+
+        transform = A.Compose(
+            transforms=[
+                A.RandomCrop(750, 750),
+                A.Resize(image_size[counter], image_size[counter]),
+                A.Normalize(mean=((0.4680, 0.4038, 0.2885)), std=(0.2476, 0.2107, 0.1931))
+
+            ],
+            p=1.0,
+        )
 
         print(f'\n\n\n ----curr model {os.path.basename(model_path)}---\n\n')
         counter += 1
@@ -157,8 +166,10 @@ if __name__ == '__main__':
     all_model_paths = args['all_models_paths']
     test_dir = args['test_dir']
     batch_size = args['batch_size']
-    height = args['height']
-    width = args['height']
+    all_month_sizes = args['all_month_sizes']
+    march_sizes = args['march_sizes']
+    april_sizes = args['april_sizes']
+    may_sizes = args['may_sizes']
     save_path = args['save_path']
     run_amount = args['run_amount']
     march_models = args['march_models']
@@ -170,35 +181,24 @@ if __name__ == '__main__':
 
     predict_dict = {}
 
-    transform = A.Compose(
-        transforms=[
-            A.RandomCrop(750, 750),
-            A.Resize(height, width),
-            # A.Normalize(mean=((0.5385, 0.4641, 0.3378)), std=(0.5385, 0.4641, 0.3378))
-            A.Normalize(mean=((0.4680, 0.4038, 0.2885)), std=(0.2476, 0.2107, 0.1931))
-
-        ],
-        p=1.0,
-    )
-
     print(f'\n\n---Running All Month Models---\n\n')
 
-    predict_dict = make_prediction(predict_dict, all_model_paths, all_images, batch_size, transform)
+    predict_dict = make_prediction(predict_dict=predict_dict, models_paths=all_model_paths, images=all_images,
+                                   batch_size=batch_size, image_size=all_month_sizes)
 
     print(f'\n\n---Running March Models---\n\n')
 
-    predict_dict = make_prediction(predict_dict, march_models, march_images, batch_size, transform)
+    predict_dict = make_prediction(predict_dict=predict_dict, models_paths=march_models, images=march_images,
+                                   batch_size=batch_size, image_size=march_sizes)
 
     print(f'\n\n---Running April Modles---\n\n')
 
-    predict_dict = make_prediction(predict_dict, april_models, april_images, batch_size, transform)
-
-    for name in predict_dict:
-        print(f'{name} --- {predict_dict[name]}')
-
+    predict_dict = make_prediction(predict_dict=predict_dict, models_paths=april_models, images=april_images,
+                                   batch_size=batch_size, image_size=april_sizes)
     print(f'\n\n---Running May Models---\n\n')
 
-    predict_dict = make_prediction(predict_dict, may_models, may_images, batch_size, transform)
+    predict_dict = make_prediction(predict_dict=predict_dict, models_paths=may_models, images=may_images,
+                                   batch_size=batch_size, image_size=may_sizes)
 
     predictions_20 = []
     predictions_21 = []
