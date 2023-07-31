@@ -19,10 +19,10 @@ if __name__ == '__main__':
     wd = [('wd', 0.1), ('wd', 0.01), ('wd', 0.001), ('wd', 0.0001), ('wd', 0.005)]
     g = [('g', 0.85), ('g', 0.5)]
 
-    out_json_0 = {"yaml_path": '',
+    out_json_0 = {"yaml_path": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml',
                   "best_save_name": [],
                   "last_save_name": [],
-                  "save_dir": '',
+                  "save_dir": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Grid_Searching',
                   "which_months": [3, 4, 5],
                   "which_val_set": [0, 1],
                   "which_train_set": [0, 1],
@@ -37,8 +37,8 @@ if __name__ == '__main__':
                   "epoch_step": 10,
                   "gamma": [],
                   "csv": [],
-                  "image_dir_20": '',
-                  "image_dir_21": '',
+                  "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
+                  "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
                   "model": 'efficientnet_b6',
                   "model_name": 'EFFICIENT NET',
@@ -46,10 +46,10 @@ if __name__ == '__main__':
 
                   }
 
-    out_json_1 = {"yaml_path": '',
+    out_json_1 = {"yaml_path": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml',
                   "best_save_name": [],
                   "last_save_name": [],
-                  "save_dir": '',
+                  "save_dir": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Grid_Searching',
                   "which_months": [3, 4, 5],
                   "which_val_set": [0, 1],
                   "which_train_set": [0, 1],
@@ -64,8 +64,8 @@ if __name__ == '__main__':
                   "epoch_step": 10,
                   "gamma": [],
                   "csv": [],
-                  "image_dir_20": '',
-                  "image_dir_21": '',
+                  "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
+                  "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
                   "model": 'efficientnet_b6',
                   "model_name": 'EFFICIENT NET',
@@ -73,10 +73,10 @@ if __name__ == '__main__':
 
                   }
 
-    out_json_2 = {"yaml_path": '',
+    out_json_2 = {"yaml_path": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml',
                   "best_save_name": [],
                   "last_save_name": [],
-                  "save_dir": '',
+                  "save_dir": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Grid_Searching',
                   "which_months": [3, 4, 5],
                   "which_val_set": [0, 1],
                   "which_train_set": [0, 1],
@@ -91,8 +91,8 @@ if __name__ == '__main__':
                   "epoch_step": 10,
                   "gamma": [],
                   "csv": [],
-                  "image_dir_20": '',
-                  "image_dir_21": '',
+                  "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
+                  "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
                   "model": 'efficientnet_b6',
                   "model_name": 'EFFICIENT NET',
@@ -100,10 +100,10 @@ if __name__ == '__main__':
 
                   }
 
-    out_json_3 = {"yaml_path": '',
+    out_json_3 = {"yaml_path": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml',
                   "best_save_name": [],
                   "last_save_name": [],
-                  "save_dir": '',
+                  "save_dir": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Grid_Searching',
                   "which_months": [3, 4, 5],
                   "which_val_set": [0, 1],
                   "which_train_set": [0, 1],
@@ -118,8 +118,8 @@ if __name__ == '__main__':
                   "epoch_step": 10,
                   "gamma": [],
                   "csv": [],
-                  "image_dir_20": '',
-                  "image_dir_21": '',
+                  "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
+                  "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
                   "model": 'efficientnet_b6',
                   "model_name": 'EFFICIENT NET',
@@ -146,8 +146,9 @@ if __name__ == '__main__':
 
         out_json_0['best_save_name'].append('best')
         out_json_0['last_save_name'].append('last')
-        out_json_0['csv'].append('change_me_:D')
+        out_json_0['csv'].append('/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_01.csv')
         out_json_0['log_name'].append(f'test{index}')
+        out_json_0['model_to_load'].append('')
 
         index += 1
         counter += 1
@@ -166,8 +167,9 @@ if __name__ == '__main__':
 
         out_json_1['best_save_name'].append('best')
         out_json_1['last_save_name'].append('last')
-        out_json_1['csv'].append('change_me_:D')
+        out_json_1['csv'].append('/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_01.csv')
         out_json_1['log_name'].append(f'test{index}')
+        out_json_1['model_to_load'].append('')
 
         index += 1
         counter += 1
@@ -186,8 +188,9 @@ if __name__ == '__main__':
 
         out_json_2['best_save_name'].append('best')
         out_json_2['last_save_name'].append('last')
-        out_json_2['csv'].append('change_me_:D')
+        out_json_2['csv'].append('/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_01.csv')
         out_json_2['log_name'].append(f'test{index}')
+        out_json_2['model_to_load'].append('')
 
         index += 1
         counter += 1
@@ -205,8 +208,9 @@ if __name__ == '__main__':
 
         out_json_3['best_save_name'].append('best')
         out_json_3['last_save_name'].append('last')
-        out_json_3['csv'].append('change_me_:D')
+        out_json_3['csv'].append('/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_01.csv')
         out_json_3['log_name'].append(f'test{index}')
+        out_json_3['model_to_load'].append('')
 
         index += 1
 
