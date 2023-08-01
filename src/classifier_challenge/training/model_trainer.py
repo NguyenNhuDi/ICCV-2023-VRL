@@ -1,7 +1,7 @@
 import os
 import yaml
-from src.classifier_challenge.utils.torch_model_chooser import ModelChooser
-from src.data_loading.DSAL import DSAL
+from model_chooser import ModelChooser
+from DSAL import DSAL
 import numpy as np
 from PIL import Image
 import torch
@@ -10,6 +10,7 @@ import pandas as pd
 import warnings
 from tqdm import tqdm
 import math
+import albumentations as A
 
 warnings.filterwarnings("ignore")
 
@@ -113,6 +114,38 @@ class ModelTrainer:
                     else:
                         train_set.append(os.path.join(self.image_dir_21, image))
 
+        val_test_dsal = DSAL(val_set,
+                             self.labels,
+                             ModelTrainer.transform_image_label,
+                             batch_size=self.batch_size,
+                             epochs=1,
+                             num_processes=self.num_processes,
+                             max_queue_size=self.num_processes * 2,
+                             transform=self.val_transform)
+
+        val_test_dsal.start()
+
+        val_mean, val_std = ModelTrainer.find_mean_std(val_test_dsal)
+
+        val_test_dsal.join()
+
+        print(f'{val_mean} --- {val_std}')
+
+        train_test_dsal = DSAL(train_set,
+                               self.labels,
+                               ModelTrainer.transform_image_label,
+                               batch_size=self.batch_size,
+                               epochs=1,
+                               num_processes=self.num_processes,
+                               max_queue_size=self.num_processes * 2,
+                               transform=self.train_transform)
+
+        train_test_dsal.start()
+        train_mean, train_std = ModelTrainer.find_mean_std(train_test_dsal)
+        train_test_dsal.join()
+
+        print(f'{train_mean} --- {train_std}')
+
         val_dsal = DSAL(val_set,
                         self.labels,
                         ModelTrainer.transform_image_label,
@@ -120,7 +153,9 @@ class ModelTrainer:
                         epochs=1,
                         num_processes=self.num_processes,
                         max_queue_size=self.num_processes * 2,
-                        transform=self.val_transform)
+                        transform=self.val_transform,
+                        mean=val_mean,
+                        std=val_std)
 
         val_batches = []
         val_dsal.start()
@@ -137,7 +172,10 @@ class ModelTrainer:
                           epochs=self.epochs,
                           num_processes=self.num_processes,
                           max_queue_size=self.num_processes * 2,
-                          transform=self.train_transform)
+                          transform=self.train_transform,
+                          mean=train_mean,
+                          std=train_std)
+
         f = open(os.path.join(self.save_dir, self.out_name), 'w')
 
         f.write(
@@ -245,36 +283,6 @@ class ModelTrainer:
 
         torch.save(self.model, self.last_save_name)
 
-    @staticmethod
-    def transform_image_label(image_path, label, transform):
-        out_image = np.array(Image.open(image_path), dtype='uint8')
-
-        if label == 'unfertilized':
-            out_label = 0
-        elif label == '_PKCa':
-            out_label = 1
-        elif label == 'N_KCa':
-            out_label = 2
-        elif label == 'NP_Ca':
-            out_label = 3
-        elif label == 'NPK_':
-            out_label = 4
-        elif label == 'NPKCa':
-            out_label = 5
-        else:
-            out_label = 6
-
-        if transform is not None:
-            augmented = transform(image=out_image)
-            out_image = augmented['image']
-
-        # converting the image and mask into tensors
-
-        out_image = torch.from_numpy(out_image).permute(2, 0, 1)
-        out_label = torch.tensor(out_label)
-
-        return out_image, out_label
-
     def freeze(self):
         for parameter in self.model.parameters():
             parameter.requires_grad = False
@@ -308,3 +316,64 @@ class ModelTrainer:
         loss = total_loss / total
         accuracy = total_correct / total
         return loss, accuracy, f'Evaluate --- Epoch: {epoch}, Loss: {loss:6.8f}, Accuracy: {accuracy:6.8f}\n'
+
+    @staticmethod
+    def find_mean_std(test_dsal):
+        sum_ = torch.zeros(3)
+        sq_sum = torch.zeros(3)
+        num_images = 0
+
+        print(f'---finding mean and std ---')
+
+        for _ in tqdm(range(test_dsal.num_batches)):
+            image, _ = test_dsal.get_item()
+            batch = image.size(0)
+            sum_ += torch.mean(image, dim=[0, 2, 3]) * batch
+            sq_sum += torch.mean(image ** 2, dim=[0, 2, 3]) * batch
+            num_images += batch
+
+        mean = sum_ / num_images
+        std = ((sq_sum / num_images) - mean ** 2) ** 0.5
+
+        return mean, std
+
+    @staticmethod
+    def transform_image_label(image_path, label, transform, mean=None, std=None):
+        out_image = np.array(Image.open(image_path), dtype='uint8')
+
+        if label == 'unfertilized':
+            out_label = 0
+        elif label == '_PKCa':
+            out_label = 1
+        elif label == 'N_KCa':
+            out_label = 2
+        elif label == 'NP_Ca':
+            out_label = 3
+        elif label == 'NPK_':
+            out_label = 4
+        elif label == 'NPKCa':
+            out_label = 5
+        else:
+            out_label = 6
+
+        if transform is not None:
+            augmented = transform(image=out_image)
+            out_image = augmented['image']
+
+        if mean is not None and std is not None:
+            temp = A.Compose(
+                transforms=[
+                    A.Normalize(mean=mean, std=std, max_pixel_value=1.0)
+                ],
+                p=1.0
+            )
+
+            augmented = temp(image=out_image)
+            out_image = augmented['image']
+
+        # converting the image and mask into tensors
+
+        out_image = torch.from_numpy(out_image).permute(2, 0, 1)
+        out_label = torch.tensor(out_label)
+
+        return out_image, out_label

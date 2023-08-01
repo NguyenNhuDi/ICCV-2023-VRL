@@ -188,7 +188,9 @@ class DSAL:
                  num_processes=1,
                  max_queue_size=50,
                  transform=None,
-                 gen_submision=False):
+                 gen_submision=False,
+                 mean=None,
+                 std=None):
 
         assert batch_size >= 1, 'The batch size entered is <= 0'
         assert epochs >= 1, 'The epochs entered is <= 0'
@@ -206,6 +208,8 @@ class DSAL:
         self.num_processes = num_processes
         self.batch_size = batch_size
         self.max_queue_size = max_queue_size
+        self.mean = mean
+        self.std = std
 
         # defining the joinable queues
         self.index_queue = mp.JoinableQueue()
@@ -229,7 +233,9 @@ class DSAL:
                                     self.image_mask_queue,
                                     self.command_queue,
                                     self.transform,
-                                    gen_submision))
+                                    gen_submision,
+                                    mean,
+                                    std))
             self.read_transform_processes.append(proc)
 
         # counter to tell when the processes terminate
@@ -283,7 +289,9 @@ class DSAL:
                              image_mask_queue: mp.JoinableQueue,
                              command_queue: mp.JoinableQueue,
                              transform=None,
-                             gen_submission=False):
+                             gen_submission=False,
+                             mean=None,
+                             std=None):
         while True:
             indexes = index_queue.get()
             index_queue.task_done()
@@ -303,7 +311,7 @@ class DSAL:
                 if not gen_submission:
                     label = yml[image_name]
 
-                image, mask = read_and_transform_function(image, label, transform)
+                image, mask = read_and_transform_function(image, label, transform, mean, std)
 
                 image_batch.append(image)
                 mask_batch.append(mask)
