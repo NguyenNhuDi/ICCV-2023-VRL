@@ -2,7 +2,8 @@ from torchvision import models
 from torch import nn
 import warnings
 import sys
-
+from src.json_models.model_generator import ModelGenerator
+from src.json_models.modules import ModuleStateController
 warnings.filterwarnings("ignore")
 
 
@@ -20,52 +21,52 @@ class ModelChooser:
             nn.Linear(in_features=2304, out_features=256),
             nn.Linear(in_features=256, out_features=7)
         )
-
-        self.efficientnet_b7 = models.efficientnet_b7(pretrained=True)
-
-        self.efficientnet_b7.classifier = nn.Sequential(
-            nn.Dropout(p=0.5, inplace=True),
-            nn.Linear(in_features=2560, out_features=256),
-            nn.Linear(in_features=256, out_features=7)
-        )
-
-        # Google Net
-        self.googlenet = models.googlenet(pretrained=True)
-
-        self.googlenet.fc = nn.Sequential(
-            nn.Linear(in_features=1024, out_features=256),
-            nn.Linear(in_features=256, out_features=7)
-        )
-
-        # Resnet
-        # TODO add the rest of resnet family
-
-        self.resnet152 = models.resnet152(pretrained=True)
-
-        self.resnet152.fc = nn.Sequential(
-            nn.Linear(in_features=2048, out_features=256),
-            nn.Linear(in_features=256, out_features=7)
-        )
-
-        # ResNeXt
-        # TODO add the rest of the resnext family
-
-        self.resnext101_32x8d = models.resnext101_32x8d(pretrained=True)
-
-        self.resnext101_32x8d.fc = nn.Sequential(
-            nn.Linear(in_features=2048, out_features=256),
-            nn.Linear(in_features=256, out_features=7)
-        )
-
-        # Shuffle Net
-        # TODO add the rest of the shuffle net family
-
-        self.shufflenet_v2_x1_0 = models.shufflenet_v2_x1_0(pretrained=True)
-
-        self.shufflenet_v2_x1_0.fc = nn.Sequential(
-            nn.Linear(in_features=1024, out_features=256),
-            nn.Linear(in_features=1024, out_features=7)
-        )
+        #
+        # self.efficientnet_b7 = models.efficientnet_b7(pretrained=True)
+        #
+        # self.efficientnet_b7.classifier = nn.Sequential(
+        #     nn.Dropout(p=0.5, inplace=True),
+        #     nn.Linear(in_features=2560, out_features=256),
+        #     nn.Linear(in_features=256, out_features=7)
+        # )
+        #
+        # # Google Net
+        # self.googlenet = models.googlenet(pretrained=True)
+        #
+        # self.googlenet.fc = nn.Sequential(
+        #     nn.Linear(in_features=1024, out_features=256),
+        #     nn.Linear(in_features=256, out_features=7)
+        # )
+        #
+        # # Resnet
+        # # TODO add the rest of resnet family
+        #
+        # self.resnet152 = models.resnet152(pretrained=True)
+        #
+        # self.resnet152.fc = nn.Sequential(
+        #     nn.Linear(in_features=2048, out_features=256),
+        #     nn.Linear(in_features=256, out_features=7)
+        # )
+        #
+        # # ResNeXt
+        # # TODO add the rest of the resnext family
+        #
+        # self.resnext101_32x8d = models.resnext101_32x8d(pretrained=True)
+        #
+        # self.resnext101_32x8d.fc = nn.Sequential(
+        #     nn.Linear(in_features=2048, out_features=256),
+        #     nn.Linear(in_features=256, out_features=7)
+        # )
+        #
+        # # Shuffle Net
+        # # TODO add the rest of the shuffle net family
+        #
+        # self.shufflenet_v2_x1_0 = models.shufflenet_v2_x1_0(pretrained=True)
+        #
+        # self.shufflenet_v2_x1_0.fc = nn.Sequential(
+        #     nn.Linear(in_features=1024, out_features=256),
+        #     nn.Linear(in_features=1024, out_features=7)
+        # )
 
         # TODO add the rest of the classification models on torch
 
@@ -73,7 +74,8 @@ class ModelChooser:
         return self.__choose_model__()
 
     def __choose_model__(self):
-
+        if ".json" in self.id:
+            return self._get_json_model()
         # TODO add the rest of the ids, group them by family pls (and alphabetical)
 
         if self.id == 'efficientnet_b6':
@@ -90,3 +92,10 @@ class ModelChooser:
             return self.shufflenet_v2_x1_0
         else:
             sys.exit(f'Model: {self.id} is not part of the registered models')
+
+    def _get_json_model(self):
+        ModuleStateController.set_state(ModuleStateController.TWO_D)
+        generator = ModelGenerator(json_path=self.id)
+        print(generator.get_log_kwargs())
+        return generator.get_model()
+

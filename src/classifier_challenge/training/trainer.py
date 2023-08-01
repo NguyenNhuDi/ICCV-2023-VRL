@@ -1,4 +1,4 @@
-from model_trainer import ModelTrainer
+from src.classifier_challenge.utils.model_trainer import ModelTrainer
 import argparse
 import json
 import albumentations as A

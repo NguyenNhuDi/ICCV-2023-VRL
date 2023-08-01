@@ -1,0 +1,58 @@
+{
+  "Tag" : "First attempt at mobile net",
+  "Children" : [
+    {
+      "ComponentClass": "Conv",
+      "args": {
+        "in_channels": 3,
+        "out_channels": 32,
+        "kernel_size": 3,
+        "padding": 1,
+        "stride": 2
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm2d",
+      "args": {
+        "num_features": 32
+      }
+    },
+    {
+      "ComponentClass": "ReLU6",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "ReverseLinearBottleneck",
+      "args": {
+        "in_channels": 32,
+        "out_channels": 16,
+        "expansion": 1
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm2d",
+      "args": {
+        "num_features": 32
+      }
+    },
+    {
+      "ComponentClass": "ReLU6",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "Flatten",
+      "args": {}
+    },
+    {
+      "ComponentClass": "Linear",
+      "args": {
+        "in_features": 1605632,
+        "out_features": 7
+      }
+    }
+  ]
+}

@@ -1,20 +1,5 @@
 {
-    "save_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV",
-    "save_name": ["en_01.csv",
-                    "en_02.csv",
-                    "en_03.csv",
-                    "en_04.csv",
-                    "en_05.csv",
-                    "rn_01.csv",
-                    "rn_02.csv",
-                    "rn_03.csv",
-                    "rn_04.csv",
-                    "rn_05.csv",
-                    "sn_01.csv",
-                    "sn_02.csv",
-                    "sn_03.csv",
-                    "sn_04.csv",
-                    "sn_05.csv"
-                  ],
-    "yaml_paths": ["/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml"]
+    "save_path": "/home/andrewheschl/Documents/ICCV-2023-VRL/split_saves",
+    "save_name": ["model_experiments.csv"],
+    "yaml_paths": ["/home/andrewheschl/Documents/ICCV-2023-VRL/splits.yml"]
   }
