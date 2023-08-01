@@ -15,6 +15,10 @@ import os
 import albumentations as A
 
 
+def lambda_transform(x: torch.Tensor, **kwargs) -> torch.Tensor:
+    return x / 255
+
+
 def read_image(image_dir):
     # out_image = np.array(Image.open(image_path), dtype='float32') / 255.0
     all_months = []
@@ -124,16 +128,14 @@ def generate(model_path, images_arr, batch_size, transform, predict_dict):
     return predict_dict
 
 
-def make_prediction(predict_dict, models_paths, images, batch_size, image_size):
+def make_prediction(predict_dict, models_paths, images, batch_size, image_size, means, std):
     counter = 0
     for model_path in models_paths:
-
         transform = A.Compose(
             transforms=[
-                A.RandomCrop(750, 750),
                 A.Resize(image_size[counter], image_size[counter]),
-                A.Normalize(mean=((0.4680, 0.4038, 0.2885)), std=(0.2476, 0.2107, 0.1931))
-
+                A.Lambda(image=lambda_transform),
+                A.Normalize(mean=means[counter], std=std[counter], max_pixel_value=1.0)
             ],
             p=1.0,
         )
@@ -176,6 +178,18 @@ if __name__ == '__main__':
     april_models = args['april_models']
     may_models = args['may_models']
 
+    all_month_means = args['all_month_means']
+    all_month_stds = args['all_month_stds']
+
+    march_means = args['march_means']
+    march_stds = args['march_stds']
+
+    april_means = args['april_means']
+    april_stds = args['april_stds']
+
+    may_means = args['may_means']
+    may_stds = args['may_stds']
+
     test_dir = np.array(glob.glob(f'{test_dir}/*.jpg'))
     all_images, march_images, april_images, may_images = read_image(test_dir)
 
@@ -184,21 +198,22 @@ if __name__ == '__main__':
     print(f'\n\n---Running All Month Models---\n\n')
 
     predict_dict = make_prediction(predict_dict=predict_dict, models_paths=all_model_paths, images=all_images,
-                                   batch_size=batch_size, image_size=all_month_sizes)
+                                   batch_size=batch_size, image_size=all_month_sizes, means=all_month_means,
+                                   std=all_month_stds)
 
     print(f'\n\n---Running March Models---\n\n')
 
     predict_dict = make_prediction(predict_dict=predict_dict, models_paths=march_models, images=march_images,
-                                   batch_size=batch_size, image_size=march_sizes)
+                                   batch_size=batch_size, image_size=march_sizes, means=march_means, std=march_stds)
 
     print(f'\n\n---Running April Modles---\n\n')
 
     predict_dict = make_prediction(predict_dict=predict_dict, models_paths=april_models, images=april_images,
-                                   batch_size=batch_size, image_size=april_sizes)
+                                   batch_size=batch_size, image_size=april_sizes, means=april_means, std=april_stds)
     print(f'\n\n---Running May Models---\n\n')
 
     predict_dict = make_prediction(predict_dict=predict_dict, models_paths=may_models, images=may_images,
-                                   batch_size=batch_size, image_size=may_sizes)
+                                   batch_size=batch_size, image_size=may_sizes, means=may_means, std=may_stds)
 
     predictions_20 = []
     predictions_21 = []
