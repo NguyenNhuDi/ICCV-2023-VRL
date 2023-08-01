@@ -115,6 +115,29 @@ if __name__ == '__main__':
         p=1.0,
     )
 
+    submit_json = {
+        'test_dir': '',
+        'save_path': '',
+        'batch_size': '',
+        'all_month_sizes': [],
+        'all_month_means': [],
+        'all_month_stds': [],
+        'march_sizes': [],
+        'april_sizes': [],
+        'may_sizes': [],
+        'march_means': [],
+        'march_stds': [],
+        'april_means': [],
+        'april_stds': [],
+        'may_means': [],
+        'may_stds': [],
+        'march_models': [],
+        'april_models': [],
+        'may_models': [],
+        'run_amount': 1
+
+    }
+
     for i in range(len(csv)):
         trainer = ModelTrainer(yaml_path=yaml_path,
                                best_save_name=os.path.join(save_dir, best_save_name[i]),
@@ -125,6 +148,8 @@ if __name__ == '__main__':
                                image_dir_21=image_dir_21,
                                train_transform=train_transform,
                                val_transform=val_transform,
+                               image_size=image_size,
+                               submit_json=submit_json,
                                batch_size=batch_size,
                                epochs=epochs,
                                weight_decay=weight_decay[i],
@@ -142,4 +167,7 @@ if __name__ == '__main__':
                                model_name=f'{model_name} -- {i + 1}',
                                out_name=out_name[i]
                                )
-        trainer()
+        submit_json = trainer()
+
+    with open(f'{model_name}.json', 'w') as json_file:
+        json.dump(submit_json, json_file, indent=4)

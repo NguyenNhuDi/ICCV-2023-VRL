@@ -10,6 +10,7 @@ import pandas as pd
 import warnings
 from tqdm import tqdm
 import albumentations as A
+import json
 
 warnings.filterwarnings("ignore")
 
@@ -28,6 +29,8 @@ class ModelTrainer:
                  weight_decay=0,
                  batch_size=32,
                  epochs=20,
+                 submit_json={},
+                 image_size=224,
                  num_processes=20,
                  learning_rate=0.01,
                  momentum=0.9,
@@ -64,6 +67,10 @@ class ModelTrainer:
         self.out_name = out_name
         self.momentum = momentum
         self.learning_rate = learning_rate
+        self.image_size = image_size
+
+        # making json to submit
+        self.submit_json = submit_json
 
         with open(yaml_path, 'r') as yaml_file:
             self.labels = yaml.safe_load(yaml_file)
@@ -129,24 +136,6 @@ class ModelTrainer:
                     else:
                         train_set.append(os.path.join(self.image_dir_21, image))
 
-        val_test_dsal = DSAL(val_set,
-                             self.labels,
-                             ModelTrainer.transform_image_label,
-                             batch_size=self.batch_size,
-                             epochs=1,
-                             num_processes=self.num_processes,
-                             max_queue_size=self.num_processes * 2,
-                             transform=self.val_transform)
-
-        val_test_dsal.start()
-
-        val_mean, val_std = ModelTrainer.find_mean_std(val_test_dsal)
-
-        val_test_dsal.join()
-
-        print(f'{val_mean} --- {val_std}')
-        f.write(f'val---{val_mean} --- {val_std}\n')
-
         train_test_dsal = DSAL(train_set,
                                self.labels,
                                ModelTrainer.transform_image_label,
@@ -171,8 +160,8 @@ class ModelTrainer:
                         num_processes=self.num_processes,
                         max_queue_size=self.num_processes * 2,
                         transform=self.val_transform,
-                        mean=val_mean,
-                        std=val_std)
+                        mean=train_mean,
+                        std=train_std)
 
         val_batches = []
         val_dsal.start()
@@ -298,6 +287,10 @@ class ModelTrainer:
 
         torch.save(self.model, self.last_save_name)
 
+        self.store_submit_json(means=train_mean, stds=train_std)
+
+        return self.submit_json
+
     def freeze(self):
         for parameter in self.model.parameters():
             parameter.requires_grad = False
@@ -331,6 +324,31 @@ class ModelTrainer:
         loss = total_loss / total
         accuracy = total_correct / total
         return loss, accuracy, f'Evaluate --- Epoch: {epoch}, Loss: {loss:6.8f}, Accuracy: {accuracy:6.8f}\n'
+
+    def store_submit_json(self, means, stds):
+
+        means = means.numpy().tolist()
+        stds = stds.numpy().tolist()
+
+        if 3 in self.months and 4 in self.months and 5 in self.months:
+            self.submit_json['all_month_sizes'].append(self.image_size)
+            self.submit_json['all_month_means'].append(means)
+            self.submit_json['all_month_stds'].append(stds)
+        else:
+            if 3 in self.months:
+                self.submit_json['march_sizes'].append(self.image_size)
+                self.submit_json['march_means'].append(means)
+                self.submit_json['march_stds'].append(stds)
+
+            if 4 in self.months:
+                self.submit_json['april_sizes'].append(self.image_size)
+                self.submit_json['april_means'].append(means)
+                self.submit_json['april_stds'].append(stds)
+
+            if 5 in self.months:
+                self.submit_json['may_sizes'].append(self.image_size)
+                self.submit_json['may_means'].append(means)
+                self.submit_json['may_stds'].append(stds)
 
     @staticmethod
     def find_mean_std(test_dsal):
