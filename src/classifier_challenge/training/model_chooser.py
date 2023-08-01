@@ -2,6 +2,8 @@ from torchvision import models
 from torch import nn
 import warnings
 import sys
+from src.json_models.model_generator import ModelGenerator
+from src.json_models.modules import ModuleStateController
 
 warnings.filterwarnings("ignore")
 
@@ -18,6 +20,9 @@ class ModelChooser:
         model = None
 
         # TODO add the rest of the ids, group them by family pls (and alphabetical)
+
+        if ".json" in self.id:
+            return self._get_json_model()
 
         if self.id == 'alexnet':
             model = models.alexnet(pretrained=True)
@@ -325,3 +330,10 @@ class ModelChooser:
             sys.exit(f'Model: {self.id} is not part of the registered models')
         
         return model
+
+    def _get_json_model(self):
+        ModuleStateController.set_state(ModuleStateController.TWO_D)
+        generator = ModelGenerator(json_path=self.id)
+        print(generator.get_log_kwargs())
+        return generator.get_model()
+
