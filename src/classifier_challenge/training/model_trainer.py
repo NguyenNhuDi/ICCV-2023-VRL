@@ -9,7 +9,6 @@ from torch import nn
 import pandas as pd
 import warnings
 from tqdm import tqdm
-import math
 import albumentations as A
 
 warnings.filterwarnings("ignore")
@@ -100,6 +99,12 @@ class ModelTrainer:
             if image != 'nan':
                 if int(image[5]) in self.months and int(image[3]) in self.val:
 
+                    if int(image[5]) == 4:
+                        if image[3] == '0':
+                            val_set.append(os.path.join(self.image_dir_20, image))
+                        else:
+                            val_set.append(os.path.join(self.image_dir_21, image))
+
                     if image[3] == '0':
                         val_set.append(os.path.join(self.image_dir_20, image))
                     else:
@@ -109,6 +114,14 @@ class ModelTrainer:
             image = str(image)
             if image != 'nan':
                 if int(image[5]) in self.months and int(image[3]) in self.val:
+
+                    if int(image[5]) == 4:
+
+                        if image[3] == '0':
+                            train_set.append(os.path.join(self.image_dir_20, image))
+                        else:
+                            train_set.append(os.path.join(self.image_dir_21, image))
+
                     if image[3] == '0':
                         train_set.append(os.path.join(self.image_dir_20, image))
                     else:
