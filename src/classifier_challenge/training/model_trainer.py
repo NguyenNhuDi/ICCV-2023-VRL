@@ -88,6 +88,8 @@ class ModelTrainer:
 
         print('Program starting...')
 
+        f = open(os.path.join(self.save_dir, self.out_name), 'w')
+
         val_set = []
         train_set = []
 
@@ -143,6 +145,7 @@ class ModelTrainer:
         val_test_dsal.join()
 
         print(f'{val_mean} --- {val_std}')
+        f.write(f'val---{val_mean} --- {val_std}\n')
 
         train_test_dsal = DSAL(train_set,
                                self.labels,
@@ -158,6 +161,7 @@ class ModelTrainer:
         train_test_dsal.join()
 
         print(f'{train_mean} --- {train_std}')
+        f.write(f'train---{train_mean} --- {train_std}\n')
 
         val_dsal = DSAL(val_set,
                         self.labels,
@@ -188,8 +192,6 @@ class ModelTrainer:
                           transform=self.train_transform,
                           mean=train_mean,
                           std=train_std)
-
-        f = open(os.path.join(self.save_dir, self.out_name), 'w')
 
         f.write(
             f'momentum: {self.momentum} --- gamma: {self.gamma} --- learning rate: {self.learning_rate} --- weight decay: {self.weight_decay}')
