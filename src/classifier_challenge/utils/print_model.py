@@ -40,8 +40,8 @@ if __name__ == '__main__':
                   "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
                   "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
-                  "model": 'resnet152',
-                  "model_name": 'EFFICIENT NET',
+                  "model": 'resnext101_32x8d',
+                  "model_name": 'ResNeXt',
                   "log_name": []
 
                   }
@@ -67,8 +67,8 @@ if __name__ == '__main__':
                   "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
                   "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
-                  "model": 'resnet152',
-                  "model_name": 'EFFICIENT NET',
+                  "model": 'resnext101_32x8d',
+                  "model_name": 'ResNeXt',
                   "log_name": []
 
                   }
@@ -94,8 +94,8 @@ if __name__ == '__main__':
                   "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
                   "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
-                  "model": 'resnet152',
-                  "model_name": 'EFFICIENT NET',
+                  "model": 'resnext101_32x8d',
+                  "model_name": 'ResNeXt',
                   "log_name": []
 
                   }
@@ -121,8 +121,8 @@ if __name__ == '__main__':
                   "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
                   "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
-                  "model": 'resnet152',
-                  "model_name": 'EFFICIENT NET',
+                  "model": 'resnext101_32x8d',
+                  "model_name": 'ResNeXt',
                   "log_name": []
 
                   }

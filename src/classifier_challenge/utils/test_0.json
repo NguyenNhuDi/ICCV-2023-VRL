@@ -182,8 +182,8 @@
     "",
     ""
   ],
-  "model": "resnet152",
-  "model_name": "EFFICIENT NET",
+  "model": "resnext101_32x8d",
+  "model_name": "ResNeXt",
   "log_name": [
     "test0",
     "test1",
