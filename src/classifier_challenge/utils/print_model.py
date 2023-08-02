@@ -9,14 +9,14 @@ import numpy as np
 import json as json
 
 if __name__ == '__main__':
-    # model = models.efficientnet_b6(pretrained=True)
+    # print('hello world')
+    # model = models.resnext101_32x8d(pretrained=True)
     #
     # print(model)
-    #
 
-    lr = [('lr', 0.1), ('lr', 0.001), ('lr', 0.05)]
-    m = [('m', 0.8), ('m', 0.6), ('m', 0.7)]
-    wd = [('wd', 0.1), ('wd', 0.01), ('wd', 0.001), ('wd', 0.0001), ('wd', 0.005)]
+    lr = [('lr', 0.1), ('lr', 0.01), ('lr', 0.05)]
+    m = [('m', 0.8), ('m', 0.9), ('m', 0.7)]
+    wd = [('wd', 0.001), ('wd', 0.000001), ('wd', 0.001), ('wd', 0.000001)]
     g = [('g', 0.85), ('g', 0.5)]
 
     out_json_0 = {"yaml_path": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml',
@@ -40,7 +40,7 @@ if __name__ == '__main__':
                   "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
                   "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
-                  "model": 'efficientnet_b6',
+                  "model": 'resnet152',
                   "model_name": 'EFFICIENT NET',
                   "log_name": []
 
@@ -67,7 +67,7 @@ if __name__ == '__main__':
                   "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
                   "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
-                  "model": 'efficientnet_b6',
+                  "model": 'resnet152',
                   "model_name": 'EFFICIENT NET',
                   "log_name": []
 
@@ -94,7 +94,7 @@ if __name__ == '__main__':
                   "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
                   "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
-                  "model": 'efficientnet_b6',
+                  "model": 'resnet152',
                   "model_name": 'EFFICIENT NET',
                   "log_name": []
 
@@ -121,19 +121,19 @@ if __name__ == '__main__':
                   "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
                   "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
-                  "model": 'efficientnet_b6',
+                  "model": 'resnet152',
                   "model_name": 'EFFICIENT NET',
                   "log_name": []
 
                   }
 
     all_combo = (list(product(lr, m, wd, g)))
-    print(len(all_combo))
+    all_len = len(all_combo)
 
     counter = 0
     index = 0
 
-    while counter < 22:
+    while counter < all_len//4:
         for i in all_combo[index]:
             if i[0] == 'lr':
                 out_json_0['learning_rate'].append(i[1])
@@ -154,7 +154,7 @@ if __name__ == '__main__':
         counter += 1
 
     counter = 0
-    while counter < 22:
+    while counter < all_len//4:
         for i in all_combo[index]:
             if i[0] == 'lr':
                 out_json_1['learning_rate'].append(i[1])
@@ -175,7 +175,7 @@ if __name__ == '__main__':
         counter += 1
 
     counter = 0
-    while counter < 22:
+    while counter < all_len//4:
         for i in all_combo[index]:
             if i[0] == 'lr':
                 out_json_2['learning_rate'].append(i[1])
