@@ -1,0 +1,8 @@
+{
+    "json_paths": [
+        "/home/adeeb.hossain1/ICCV/RESNET152 APRIL.json",
+        "/home/adeeb.hossain1/ICCV/RESNET152 MARCH.json",
+        "/home/adeeb.hossain1/ICCV/RESNET152 MAY.json"
+    ],
+    "save_path": "/home/adeeb.hossain1/ICCV/Json Maker/test.json"
+}
