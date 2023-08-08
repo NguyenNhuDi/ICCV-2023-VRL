@@ -26,6 +26,7 @@ if __name__ == '__main__':
         "test_dir": "",
         "save_path": "",
         "batch_size": "",
+        "all_models_paths": [],
         "all_month_sizes": [],
         "all_month_means": [],
         "all_month_stds": [],
