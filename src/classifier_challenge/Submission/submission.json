@@ -4,9 +4,10 @@
 ],
     "test_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/Test Images",
     "save_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Predictions/Month_based_el",
+    "yaml_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\UNIQUE VAL SET\\unique_val.yml",
+    "unique_val_images": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\UNIQUE VAL SET",
     "batch_size": 8,
     "all_month_sizes": [],
-
     "all_month_means": [],
     "all_month_stds":[],
 

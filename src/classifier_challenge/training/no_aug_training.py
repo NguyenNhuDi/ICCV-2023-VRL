@@ -63,45 +63,6 @@ if __name__ == '__main__':
                 always_apply=False,
                 p=0.75,
             ),
-            A.OneOf(transforms=[
-                A.RandomFog(0.1, 0.3, 0.5, p=0.5),
-                A.RandomShadow((0, 0, 1, 1), 1, 1, p=0.5),
-            ], p=0.3),
-
-            A.OneOf(transforms=[
-                A.Sharpen(alpha=(0.0, 0.1), lightness=(0, 0.1), p=0.25),
-                A.RandomBrightnessContrast((-0.05, 0.05), (0.0), p=0.25),
-                A.RandomBrightnessContrast((0, 0), (-0.25, 0.25), p=0.25),
-                A.ImageCompression(65, 100, p=0.25),
-            ], p=0.3),
-
-            A.OneOf(transforms=[
-                A.GaussNoise((0, 0.02), p=0.2125),
-                A.ISONoise((0.01, 0.1), p=0.2125),
-                A.RandomGamma((80, 110), p=0.2125),
-                A.Blur(blur_limit=(1, 2), p=0.2125),
-                A.MotionBlur(blur_limit=3, p=0.15)
-            ], p=0.3),
-
-            A.OneOf(transforms=[
-                A.RandomFog(0.1, 0.3, 0.5, p=0.5),
-                A.RandomShadow((0, 0, 1, 1), 1, 1, p=0.5),
-            ], p=0.3),
-
-            A.OneOf(transforms=[
-                A.Sharpen(alpha=(0.0, 0.1), lightness=(0, 0.1), p=0.25),
-                A.RandomBrightnessContrast((-0.05, 0.05), (0.0), p=0.25),
-                A.RandomBrightnessContrast((0, 0), (-0.25, 0.25), p=0.25),
-                A.ImageCompression(65, 100, p=0.25),
-            ], p=0.3),
-
-            A.OneOf(transforms=[
-                A.GaussNoise((0, 0.02), p=0.2125),
-                A.ISONoise((0.01, 0.1), p=0.2125),
-                A.RandomGamma((80, 110), p=0.2125),
-                A.Blur(blur_limit=(1, 2), p=0.2125),
-                A.MotionBlur(blur_limit=3, p=0.15)
-            ], p=0.3),
             A.Lambda(image=lambda_transform)
         ],
         p=1.0,
