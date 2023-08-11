@@ -16,8 +16,8 @@
   "which_train_set": [
     0
   ],
-  "image_size": 224,
-  "batch_size": 16,
+  "image_size": 512,
+  "batch_size": 8,
   "epochs": 100,
   "weight_decay": [
     0
@@ -42,7 +42,7 @@
   "model_to_load": [
     ""
   ],
-  "model": "/home/andrewheschl/Documents/ICCV-2023-VRL/src/json_models/model_definitions/mobilnetv2.json",
+  "model": "/home/andrewheschl/Documents/ICCV-2023-VRL/src/json_models/model_definitions/gated_xmodule/3.json",
   "model_name": "fsdkjl;",
   "log_name": [
     "test.log"
