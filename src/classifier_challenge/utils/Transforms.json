@@ -1,0 +1,18 @@
+{
+    "image_base_dir": [
+        "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WW2020\\images",
+        "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\WR2021\\images"
+    ],
+    "input_csv" : "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\NEW_CSV\\Efficient Net\\en_0.csv",
+
+    "input_yaml" : "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\train_set.yml",
+
+    "20_save_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\cut_mix_set",
+
+    "21_save_path": "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\cut_mix_set",
+
+    "tile_size": 64,
+    "image_per_class": 12,
+    "choose": 2
+
+}

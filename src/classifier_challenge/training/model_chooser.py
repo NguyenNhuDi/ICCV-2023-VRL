@@ -144,6 +144,7 @@ class ModelChooser:
             model.classifier = nn.Sequential(
                 nn.Dropout(p=0.3, inplace=True),
                 nn.Linear(in_features=1280, out_features=1000),
+                nn.ReLU(inplace=True),
                 nn.Linear(in_features=1000, out_features=7)
             )
 

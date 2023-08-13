@@ -19,6 +19,9 @@
   "image_size": 224,
   "batch_size": 16,
   "epochs": 65,
+  "image_size": 512,
+  "batch_size": 8,
+  "epochs": 100,
   "weight_decay": [
     1e-06, 1e-06, 1e-06, 1e-06, 1e-06
   ],
@@ -42,8 +45,8 @@
   "model_to_load": [
     ""
   ],
-  "model": "/home/andrew.heschl/Documents/ICCV-2023-VRL/src/json_models/model_definitions/mobilnetv2.json",
-  "model_name": "test",
+  "model": "/home/andrewheschl/Documents/ICCV-2023-VRL/src/json_models/model_definitions/gated_xmodule/3.json",
+  "model_name": "fsdkjl;",
   "log_name": [
     "test.log"
   ]

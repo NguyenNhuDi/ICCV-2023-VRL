@@ -4,7 +4,8 @@ CONCAT = 'concat'
 ADD = 'add'
 TWO_D = '2d'
 THREE_D = '3d'
-
+INSTANCE = 'instance'
+BATCH = "batch"
 
 def my_import(class_name: str, dropout_package: str = 'torch.nn'):
     """
@@ -79,6 +80,9 @@ def my_import(class_name: str, dropout_package: str = 'torch.nn'):
     elif class_name == "InstanceNorm":
         from src.json_models.modules import InstanceNorm
         return InstanceNorm
+    elif class_name == "BatchNorm":
+        from src.json_models.modules import BatchNorm
+        return BatchNorm
     elif class_name == "ConvTranspose":
         from src.json_models.modules import ConvTranspose
         return ConvTranspose

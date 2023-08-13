@@ -9,6 +9,8 @@ CONCAT = 'concat'
 ADD = 'add'
 TWO_D = '2d'
 THREE_D = '3d'
+INSTANCE = 'instance'
+BATCH = "batch"
 
 
 class ModuleStateController:
@@ -28,11 +30,18 @@ class ModuleStateController:
             return nn.Conv2d
 
     @classmethod
-    def norm_op(cls):
+    def instance_norm_op(cls):
         if cls.state == cls.THREE_D:
             return nn.InstanceNorm3d
         else:
             return nn.InstanceNorm2d
+
+    @classmethod
+    def batch_norm_op(cls):
+        if cls.state == cls.THREE_D:
+            return nn.BatchNorm3d
+        else:
+            return nn.BatchNorm2d
 
     @classmethod
     def transp_op(cls):
@@ -119,7 +128,7 @@ class ConvBlock(nn.Module):
         super().__init__()
 
         conv_op = ModuleStateController.conv_op()
-        norm_op = ModuleStateController.norm_op()
+        norm_op = ModuleStateController.instance_norm_op()
 
         self.conv = conv_op(channels, channels, kernel_size=3, padding=1)
         self.bn = norm_op(channels)
@@ -370,7 +379,7 @@ class DepthWiseSeparableConv(nn.Module):
 
         self.mode = mode
         # GET OPERATIONS
-        norm = ModuleStateController.norm_op()
+        norm = ModuleStateController.instance_norm_op()
         conv_op = ModuleStateController.conv_op()
 
         super(DepthWiseSeparableConv, self).__init__()
@@ -421,12 +430,20 @@ class XModule(nn.Module):
     """
 
     def __init__(self, in_channels, out_channels, dilations=[1], kernel_sizes=[3], mode='concat', stride=1,
-                 apply_norm: bool = False, gated=False, **kwargs):
+                 apply_norm: bool = False, gated=False, norm_op: str = 'instance', **kwargs):
         super(XModule, self).__init__()
         self.branches = nn.ModuleList()
         self.apply_norm = apply_norm
 
+        assert norm_op in [INSTANCE, BATCH], "Invalid norm operation. Do better"
         assert not (ModuleStateController.state == '3d' and gated), "Cannot use gated convolution in 3d XModule."
+
+        # Picl the norm op
+        if norm_op == INSTANCE:
+            self.norm_op = nn.InstanceNorm2d if ModuleStateController.state == TWO_D else nn.InstanceNorm3d
+        else:
+            self.norm_op = nn.BatchNorm2d if ModuleStateController.state == TWO_D else nn.BatchNorm3d
+
         self.gated = gated
 
         if 'kernel_size' in kwargs:
@@ -470,7 +487,7 @@ class XModule(nn.Module):
         )
 
         if self.apply_norm:
-            branch.insert(1, nn.InstanceNorm2d(num_features=out_channels))
+            branch.insert(1, self.norm_op(num_features=out_channels))
         return branch
 
     def _get_3d_branch(self, d: int, k: int, in_channels: int, out_channels: int, stride: int) -> nn.Sequential:
@@ -489,7 +506,7 @@ class XModule(nn.Module):
         )
 
         if self.apply_norm:
-            branch.insert(1, nn.InstanceNorm3d(num_features=out_channels))
+            branch.insert(1, self.norm_op(num_features=out_channels))
         return branch
 
     def _get_3d_branch_heavy(self, d: int, k: int, in_channels: int, out_channels: int, stride: int) -> nn.Sequential:
@@ -505,7 +522,7 @@ class XModule(nn.Module):
         )
 
         if self.apply_norm:
-            branch.insert(1, nn.InstanceNorm3d(num_features=out_channels))
+            branch.insert(1, self.norm_op(num_features=out_channels))
         return branch
 
     def forward(self, x):
@@ -694,9 +711,9 @@ class ReverseLinearBottleneck(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.skip and self.reducer is None:
             self.reducer = XModule(
-                in_channels=self.out_channels+self.in_channels,
+                in_channels=self.out_channels + self.in_channels,
                 out_channels=self.out_channels,
-                kernel_sizes=[min(x.shape[1], 11)]
+                kernel_sizes=[(x.shape[1] if x.shape[1] % 2 != 0 else x.shape[1] - 1)]
             )
 
         if self.skip:
@@ -730,7 +747,17 @@ class InstanceNorm(nn.Module):
     def __init__(self, num_features):
         super().__init__()
         self.num_features = num_features
-        self.norm = ModuleStateController.norm_op()(num_features=num_features)
+        self.norm = ModuleStateController.instance_norm_op()(num_features=num_features)
+
+    def forward(self, x):
+        return self.norm(x)
+
+
+class BatchNorm(nn.Module):
+    def __init__(self, num_features):
+        super().__init__()
+        self.num_features = num_features
+        self.norm = ModuleStateController.batch_norm_op()(num_features=num_features)
 
     def forward(self, x):
         return self.norm(x)
