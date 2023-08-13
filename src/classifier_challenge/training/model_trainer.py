@@ -172,6 +172,7 @@ class ModelTrainer:
         val_dsal.start()
 
         for i in tqdm(range(val_dsal.num_batches)):
+            print('in da loop')
             val_batches.append(val_dsal.get_item())
 
         val_dsal.join()

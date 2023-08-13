@@ -385,6 +385,7 @@ class DSAL:
             return image, label
 
         except queue.Empty:
+            print('i am waiting sire', flush=True)
             time.sleep(0.01)
             return self.get_item()
 

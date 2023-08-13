@@ -1,0 +1,363 @@
+{
+  "LogKwargs": {
+    "group": "XModule Single Branch Gated",
+    "architecture": "nnunet",
+    "base": "XModule Norm",
+    "Decoder": "Conv",
+    "max features": 320,
+    "K": 3,
+    "in_shape": 512
+  },
+  "Tag": "XModule k3 gated",
+  "Children": [
+    {
+      "ComponentClass": "XModule",
+      "args": {
+        "in_channels": 3,
+        "out_channels": 32,
+        "stride": 1,
+        "dilations": [
+          1
+        ],
+        "kernel_sizes": [
+          3
+        ],
+        "apply_norm": true,
+        "gated": true
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm",
+      "args": {
+        "num_features": 32
+      }
+    },
+    {
+      "ComponentClass": "LeakyReLU",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "XModule",
+      "args": {
+        "in_channels": 32,
+        "out_channels": 32,
+        "stride": 1,
+        "dilations": [
+          1
+        ],
+        "kernel_sizes": [
+          3
+        ],
+        "apply_norm": true
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm",
+      "args": {
+        "num_features": 32
+      }
+    },
+    {
+      "ComponentClass": "LeakyReLU",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "XModule",
+      "args": {
+        "in_channels": 32,
+        "out_channels": 64,
+        "stride": 2,
+        "dilations": [
+          1
+        ],
+        "kernel_sizes": [
+          3
+        ],
+        "apply_norm": true,
+        "gated": true
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm",
+      "args": {
+        "num_features": 64
+      }
+    },
+    {
+      "ComponentClass": "LeakyReLU",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "XModule",
+      "args": {
+        "in_channels": 64,
+        "out_channels": 64,
+        "stride": 1,
+        "dilations": [
+          1
+        ],
+        "kernel_sizes": [
+          3
+        ],
+        "apply_norm": true
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm",
+      "args": {
+        "num_features": 64
+      }
+    },
+    {
+      "ComponentClass": "LeakyReLU",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "XModule",
+      "args": {
+        "in_channels": 64,
+        "out_channels": 128,
+        "stride": 2,
+        "dilations": [
+          1
+        ],
+        "kernel_sizes": [
+          3
+        ],
+        "apply_norm": true,
+        "gated": true
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm",
+      "args": {
+        "num_features": 128
+      }
+    },
+    {
+      "ComponentClass": "LeakyReLU",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "XModule",
+      "args": {
+        "in_channels": 128,
+        "out_channels": 128,
+        "stride": 1,
+        "dilations": [
+          1
+        ],
+        "kernel_sizes": [
+          3
+        ],
+        "apply_norm": true
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm",
+      "args": {
+        "num_features": 128
+      }
+    },
+    {
+      "ComponentClass": "LeakyReLU",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "XModule",
+      "args": {
+        "in_channels": 128,
+        "out_channels": 256,
+        "stride": 2,
+        "dilations": [
+          1
+        ],
+        "kernel_sizes": [
+          3
+        ],
+        "apply_norm": true,
+        "gated": true
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm",
+      "args": {
+        "num_features": 256
+      }
+    },
+    {
+      "ComponentClass": "LeakyReLU",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "XModule",
+      "args": {
+        "in_channels": 256,
+        "out_channels": 256,
+        "stride": 1,
+        "dilations": [
+          1
+        ],
+        "kernel_sizes": [
+          3
+        ],
+        "apply_norm": true
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm",
+      "args": {
+        "num_features": 256
+      }
+    },
+    {
+      "ComponentClass": "LeakyReLU",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "XModule",
+      "args": {
+        "in_channels": 256,
+        "out_channels": 320,
+        "stride": 2,
+        "dilations": [
+          1
+        ],
+        "kernel_sizes": [
+          3
+        ],
+        "apply_norm": true,
+        "gated": true
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm",
+      "args": {
+        "num_features": 320
+      }
+    },
+    {
+      "ComponentClass": "LeakyReLU",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "XModule",
+      "args": {
+        "in_channels": 320,
+        "out_channels": 512,
+        "stride": 2,
+        "dilations": [
+          1
+        ],
+        "kernel_sizes": [
+          3
+        ],
+        "apply_norm": true
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm",
+      "args": {
+        "num_features": 512
+      }
+    },
+    {
+      "ComponentClass": "LeakyReLU",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "XModule",
+      "args": {
+        "in_channels": 512,
+        "out_channels": 1024,
+        "stride": 2,
+        "dilations": [
+          1
+        ],
+        "kernel_sizes": [
+          3
+        ],
+        "apply_norm": true
+      }
+    },
+    {
+      "ComponentClass": "BatchNorm",
+      "args": {
+        "num_features": 1024
+      }
+    },
+    {
+      "ComponentClass": "LeakyReLU",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+          "ComponentClass": "MaxPool2d",
+          "args": {
+              "kernel_size": 4
+          }
+      },
+    {
+      "ComponentClass": "XModule",
+      "args": {
+        "in_channels": 1024,
+        "out_channels": 1024,
+        "stride": 1,
+        "dilations": [
+          1
+        ],
+        "kernel_sizes": [
+          3
+        ],
+        "apply_norm": true
+      }
+    },
+    {
+      "ComponentClass": "Flatten",
+      "args": {
+        "start_dim": 1
+      }
+    },
+    {
+      "ComponentClass": "Linear",
+      "args": {
+        "in_features": 4096,
+        "out_features": 2048
+      }
+    },
+    {
+      "ComponentClass": "LeakyReLU",
+      "args": {
+        "inplace": true
+      }
+    },
+    {
+      "ComponentClass": "Linear",
+      "args": {
+        "in_features": 2048,
+        "out_features": 7
+      }
+    }
+  ]
+}
