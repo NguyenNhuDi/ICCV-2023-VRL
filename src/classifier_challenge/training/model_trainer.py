@@ -1,5 +1,4 @@
 import os
-import yaml
 from model_chooser import ModelChooser
 from DSAL import DSAL
 import numpy as np
@@ -10,18 +9,20 @@ import pandas as pd
 import warnings
 from tqdm import tqdm
 import albumentations as A
-import json
+import random
 
 warnings.filterwarnings("ignore")
 
 
 class ModelTrainer:
 
-    def __init__(self, yaml_path,
+    def __init__(self,
+                 current_train_dict,
+                 labels,
+                 csv,
                  best_save_name,
                  last_save_name,
                  save_dir,
-                 csv,
                  image_dir_20,
                  image_dir_21,
                  train_transform=None,
@@ -38,13 +39,13 @@ class ModelTrainer:
                  epoch_step=10,
                  gamma=0.85,
                  model_to_load=None,
-                 months=[3,4,5],
-                 train=[0,1],
-                 val=[0,1],
+                 months=[3, 4, 5],
+                 train=[0, 1],
+                 val=[0, 1],
                  model='efficientnet_b6',
                  model_name='',
-                 out_name='out.log'):
-
+                 out_name='out.log',
+                 tile_size=64):
 
         self.image_dir_20 = image_dir_20
         self.image_dir_21 = image_dir_21
@@ -69,14 +70,13 @@ class ModelTrainer:
         self.momentum = momentum
         self.learning_rate = learning_rate
         self.image_size = image_size
-
-
+        self.tile_size = tile_size
+        self.current_train_dict = current_train_dict
 
         # making json to submit
         self.submit_json = submit_json
 
-        with open(yaml_path, 'r') as yaml_file:
-            self.labels = yaml.safe_load(yaml_file)
+        self.labels = labels
 
         if model_to_load != '':
             self.model = torch.load(model_to_load)
@@ -86,11 +86,13 @@ class ModelTrainer:
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=momentum, weight_decay=weight_decay)
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=momentum,
+                                         weight_decay=weight_decay)
 
         self.model.to(self.device)
 
-        print(f'momentum: {momentum} --- gamma: {gamma} --- learning rate: {learning_rate} --- weight decay: {weight_decay}')
+        print(
+            f'momentum: {momentum} --- gamma: {gamma} --- learning rate: {learning_rate} --- weight decay: {weight_decay}')
 
     def __call__(self):
 
@@ -98,10 +100,8 @@ class ModelTrainer:
 
         f = open(os.path.join(self.save_dir, self.out_name), 'w')
 
-
         val_set = []
         train_set = []
-
 
         df = pd.read_csv(self.csv)
         data_dict = df.to_dict(orient='list')
@@ -110,19 +110,17 @@ class ModelTrainer:
             image = str(image)
             if image != 'nan':
                 if int(image[5]) in self.months and int(image[3]) in self.val:
-                    
-                    
+
                     if int(image[5]) == 4:
                         if image[3] == '0':
                             val_set.append(os.path.join(self.image_dir_20, image))
                         else:
                             val_set.append(os.path.join(self.image_dir_21, image))
-                    
+
                     if image[3] == '0':
                         val_set.append(os.path.join(self.image_dir_20, image))
                     else:
                         val_set.append(os.path.join(self.image_dir_21, image))
-
 
         for image in data_dict['train']:
             image = str(image)
@@ -130,39 +128,38 @@ class ModelTrainer:
                 if int(image[5]) in self.months and int(image[3]) in self.val:
 
                     if int(image[5]) == 4:
-    
+
                         if image[3] == '0':
                             train_set.append(os.path.join(self.image_dir_20, image))
                         else:
-                            train_set.append(os.path.join(self.image_dir_21, image))                  
-
+                            train_set.append(os.path.join(self.image_dir_21, image))
 
                     if image[3] == '0':
                         train_set.append(os.path.join(self.image_dir_20, image))
                     else:
                         train_set.append(os.path.join(self.image_dir_21, image))
 
+        train_test_dsal = DSAL(images=train_set,
+                               yml=self.labels,
+                               read_and_transform_function=ModelTrainer.transform_image_label,
+                               cut_mix_function=self.cut_mix_function,
+                               batch_size=self.batch_size,
+                               epochs=1,
+                               num_processes=self.num_processes,
+                               max_queue_size=self.num_processes * 2,
+                               transform=self.train_transform)
 
-        train_test_dsal = DSAL(train_set,
-                               self.labels,
-                               ModelTrainer.transform_image_label,
-                                batch_size=self.batch_size,
-                                epochs=1,
-                                num_processes=self.num_processes,
-                                max_queue_size=self.num_processes * 2,
-                                transform=self.train_transform)
-        
         train_test_dsal.start()
         train_mean, train_std = ModelTrainer.find_mean_std(train_test_dsal)
         train_test_dsal.join()
 
-
         print(f'{train_mean} --- {train_std}')
         f.write(f'train---{train_mean} --- {train_std}\n')
 
-        val_dsal = DSAL(val_set,
-                        self.labels,
-                        ModelTrainer.transform_image_label,
+        val_dsal = DSAL(images=val_set,
+                        yml=self.labels,
+                        read_and_transform_function=ModelTrainer.transform_image_label,
+                        cut_mix_function=None,
                         batch_size=self.batch_size,
                         epochs=1,
                         num_processes=self.num_processes,
@@ -179,9 +176,10 @@ class ModelTrainer:
 
         val_dsal.join()
 
-        train_dsal = DSAL(train_set,
-                          self.labels,
-                          ModelTrainer.transform_image_label,
+        train_dsal = DSAL(images=train_set,
+                          yml=self.labels,
+                          read_and_transform_function=ModelTrainer.transform_image_label,
+                          cut_mix_function=self.cut_mix_function,
                           batch_size=self.batch_size,
                           epochs=self.epochs,
                           num_processes=self.num_processes,
@@ -189,9 +187,9 @@ class ModelTrainer:
                           transform=self.train_transform,
                           mean=train_mean,
                           std=train_std)
-        
 
-        f.write(f'momentum: {self.momentum} --- gamma: {self.gamma} --- learning rate: {self.learning_rate} --- weight decay: {self.weight_decay}')
+        f.write(
+            f'momentum: {self.momentum} --- gamma: {self.gamma} --- learning rate: {self.learning_rate} --- weight decay: {self.weight_decay}')
 
         print('starting pathing...')
         train_dsal.start()
@@ -215,7 +213,6 @@ class ModelTrainer:
         best_epoch = 0
 
         torch.set_grad_enabled(True)
-
 
         # scheduler: optimizer, step size, gamma
         scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, self.epoch_step, self.gamma)
@@ -297,10 +294,8 @@ class ModelTrainer:
         torch.save(self.model, self.last_save_name)
 
         model_to_use = self.best_save_name if best_accuracy >= accuracy else self.last_save_name
-        
+
         self.store_submit_json(means=train_mean, stds=train_std, model_path=model_to_use)
-
-
 
         return self.submit_json
 
@@ -337,7 +332,7 @@ class ModelTrainer:
         loss = total_loss / total
         accuracy = total_correct / total
         return loss, accuracy, f'Evaluate --- Epoch: {epoch}, Loss: {loss:6.8f}, Accuracy: {accuracy:6.8f}\n'
-    
+
     def store_submit_json(self, means, stds, model_path):
 
         means = means.numpy().tolist()
@@ -354,21 +349,18 @@ class ModelTrainer:
                 self.submit_json['march_means'].append(means)
                 self.submit_json['march_stds'].append(stds)
                 self.submit_json['march_models'].append(model_path)
-            
+
             if 4 in self.months:
                 self.submit_json['april_sizes'].append(self.image_size)
                 self.submit_json['april_means'].append(means)
                 self.submit_json['april_stds'].append(stds)
                 self.submit_json['april_models'].append(model_path)
 
-
             if 5 in self.months:
                 self.submit_json['may_sizes'].append(self.image_size)
                 self.submit_json['may_means'].append(means)
-                self.submit_json['may_stds'].append(stds)      
+                self.submit_json['may_stds'].append(stds)
                 self.submit_json['may_models'].append(model_path)
-
-              
 
     @staticmethod
     def find_mean_std(test_dsal):
@@ -381,34 +373,107 @@ class ModelTrainer:
         for _ in tqdm(range(test_dsal.num_batches)):
             image, _ = test_dsal.get_item()
             batch = image.size(0)
-            sum_ += torch.mean(image, dim=[0, 2, 3])*batch
-            sq_sum += torch.mean(image ** 2, dim=[0, 2, 3])*batch
+            sum_ += torch.mean(image, dim=[0, 2, 3]) * batch
+            sq_sum += torch.mean(image ** 2, dim=[0, 2, 3]) * batch
             num_images += batch
-            
+
         mean = sum_ / num_images
-        std = ((sq_sum/num_images) - mean**2) ** 0.5
-        
+        std = ((sq_sum / num_images) - mean ** 2) ** 0.5
+
         return mean, std
 
+    @staticmethod
+    def get_label(label):
+        if label == 'unfertilized':
+            return 0
+        elif label == '_PKCa':
+            return 1
+        elif label == 'N_KCa':
+            return 2
+        elif label == 'NP_Ca':
+            return 3
+        elif label == 'NPK_':
+            return 4
+        elif label == 'NPKCa':
+            return 5
+        else:
+            return 6
+
+    def cut_mix_function(self, image_path, label, transform, mean=None, std=None):
+
+        base_path = os.path.dirname(image_path)
+        image_name = os.path.basename(image_path)
+        year = image_name[3]
+        month = image_name[5]
+
+        a = np.array(Image.open(image_path), dtype='uint8')
+
+        out_label = ModelTrainer.get_label(label)
+
+        # cut mixing it
+
+        curr_class_arr = self.current_train_dict[year][month][label]
+
+        random_index = random.randint(0, len(curr_class_arr) - 1)
+
+        b = np.array(Image.open(os.path.join(base_path, curr_class_arr[random_index])), dtype='uint8')
+
+        temp = A.Compose(
+            transforms=[
+                A.Resize(1024, 1024)
+            ],
+            p=1.0,
+        )
+
+        augmented = temp(image=a)
+        out_image = augmented['image']
+
+        augmented = temp(image=b)
+        b = augmented['image']
+
+        i = 0
+        while i < (1024 // self.tile_size) - 1:
+            # print(f'i: {i}')
+            j = 0
+            while j < (1024 // self.tile_size) - 1:
+                new_cell_0 = b[i * self.tile_size: (i + 1) * self.tile_size,
+                             j * self.tile_size: (j + 1) * self.tile_size, :]
+                new_cell_1 = b[(i + 1) * self.tile_size: (i + 2) * self.tile_size,
+                             (j + 1) * self.tile_size: (j + 2) * self.tile_size, :]
+                out_image[i * self.tile_size: (i + 1) * self.tile_size, j * self.tile_size: (j + 1) * self.tile_size,
+                :] = new_cell_0
+                out_image[(i + 1) * self.tile_size: (i + 2) * self.tile_size,
+                (j + 1) * self.tile_size: (j + 2) * self.tile_size, :] = new_cell_1
+                j += 2
+            i += 2
+
+        if transform is not None:
+            augmented = transform(image=out_image)
+            out_image = augmented['image']
+
+        if mean is not None and std is not None:
+            temp = A.Compose(
+                transforms=[
+                    A.Normalize(mean=mean, std=std, max_pixel_value=1.0)
+                ],
+                p=1.0
+            )
+
+            augmented = temp(image=out_image)
+            out_image = augmented['image']
+
+        # converting the image and mask into tensors
+
+        out_image = torch.from_numpy(out_image).permute(2, 0, 1)
+        out_label = torch.tensor(out_label)
+
+        return out_image, out_label
 
     @staticmethod
     def transform_image_label(image_path, label, transform, mean=None, std=None):
         out_image = np.array(Image.open(image_path), dtype='uint8')
 
-        if label == 'unfertilized':
-            out_label = 0
-        elif label == '_PKCa':
-            out_label = 1
-        elif label == 'N_KCa':
-            out_label = 2
-        elif label == 'NP_Ca':
-            out_label = 3
-        elif label == 'NPK_':
-            out_label = 4
-        elif label == 'NPKCa':
-            out_label = 5
-        else:
-            out_label = 6
+        out_label = ModelTrainer.get_label(label)
 
         if transform is not None:
             augmented = transform(image=out_image)

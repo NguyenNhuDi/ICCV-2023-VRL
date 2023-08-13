@@ -1,50 +1,37 @@
 {
-  "yaml_path": "/home/andrewheschl/Documents/ICCV-2023-VRL/splits.yml",
-  "best_save_name": [
-    "best"
-  ],
-  "last_save_name": [
-    "last"
-  ],
-  "save_dir": "/home/andrewheschl/Documents/ICCV-2023-VRL/model_saves",
-  "which_months": [
-    4
-  ],
-  "which_val_set": [
-    0
-  ],
-  "which_train_set": [
-    0
-  ],
-  "image_size": 224,
-  "batch_size": 16,
-  "epochs": 100,
-  "weight_decay": [
-    0
-  ],
-  "num_processes": 32,
-  "learning_rate": [
-    0.01
-  ],
-  "momentum": [
-    0
-  ],
-  "unfreeze_epoch": 0,
-  "epoch_step": 1,
-  "gamma": [
-    1
-  ],
-  "csv": [
-    "/home/andrewheschl/Documents/ICCV-2023-VRL/split_saves/model_experiments.csv"
-  ],
-  "image_dir_20": "/home/andrewheschl/Documents/Dataset/DND/2020/images",
-  "image_dir_21": "/home/andrewheschl/Documents/Dataset/DND/2021/images",
-  "model_to_load": [
-    ""
-  ],
-  "model": "/home/andrewheschl/Documents/ICCV-2023-VRL/src/json_models/model_definitions/mobilnetv2.json",
-  "model_name": "fsdkjl;",
-  "log_name": [
-    "test.log"
-  ]
+    "yaml_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml",
+    "best_save_name": ["en_may_naug_1_best", "en_may_naug_2_best", "en_may_naug_3_best", "en_may_naug_4_best", "en_may_naug_5_best"],
+    "last_save_name": ["en_may_naug_1_last", "en_may_naug_2_last", "en_may_naug_3_last", "en_may_naug_4_last", "en_may_naug_5_last"],
+    "save_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/May/cut_mix",
+    "which_months": [5],
+    "which_val_set": [0,1],
+    "which_train_set": [0,1],
+    "image_size": 528,
+    "batch_size": 16,
+    "epochs": 63,
+    "weight_decay": [1e-07,1e-07,1e-07,1e-07,1e-07],
+    "num_processes": 20,
+    "learning_rate": [0.1, 0.1, 0.1, 0.1, 0.1],
+    "momentum": [0.8, 0.8, 0.8, 0.8, 0.8],
+    "unfreeze_epoch": 3,
+    "epoch_step": 10,
+    "gamma": [0.5, 0.5, 0.5, 0.5, 0.5],
+    "csv": ["/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_1.csv",
+            "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_2.csv",
+            "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_3.csv",
+            "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_4.csv",
+            "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_0.csv"
+
+],
+    "image_dir_20": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images",
+    "image_dir_21": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images",
+    "model_to_load": ["","","","",""],
+    "model": "efficientnet_b6",
+    "model_name": "EFFICIENT NET MAY",
+    "log_name": ["new_csv1.out",
+                "new_csv2.out",
+                "new_csv3.out",
+                "new_csv4.out",
+                "new_csv0.out"
+]
 }
