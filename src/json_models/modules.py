@@ -696,7 +696,7 @@ class ReverseLinearBottleneck(nn.Module):
             self.reducer = XModule(
                 in_channels=self.out_channels+self.in_channels,
                 out_channels=self.out_channels,
-                kernel_sizes=[(x.shape[1] if x.shape[1] % 2 != 0 else x.shape[1]-1)]
+                kernel_sizes=[min(x.shape[1], 11)]
             )
 
         if self.skip:

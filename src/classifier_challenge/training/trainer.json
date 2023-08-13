@@ -1,14 +1,14 @@
 {
-  "yaml_path": "/home/andrewheschl/Documents/ICCV-2023-VRL/splits.yml",
+  "yaml_path": "/home/andrew.heschl/Documents/ICCV-2023-VRL/splits.yml",
   "best_save_name": [
     "best"
   ],
   "last_save_name": [
     "last"
   ],
-  "save_dir": "/home/andrewheschl/Documents/ICCV-2023-VRL/model_saves",
+  "save_dir": "/home/andrew.heschl/Documents/ICCV-2023-VRL/model_saves",
   "which_months": [
-    4
+    3, 4, 5
   ],
   "which_val_set": [
     0
@@ -18,32 +18,32 @@
   ],
   "image_size": 224,
   "batch_size": 16,
-  "epochs": 100,
+  "epochs": 65,
   "weight_decay": [
-    0
+    1e-06, 1e-06, 1e-06, 1e-06, 1e-06
   ],
-  "num_processes": 32,
+  "num_processes": 20,
   "learning_rate": [
-    0.01
+    0.05, 0.05, 0.05, 0.05, 0.05
   ],
   "momentum": [
-    0
+    0.8, 0.8, 0.8, 0.8, 0.8
   ],
-  "unfreeze_epoch": 0,
-  "epoch_step": 1,
+  "unfreeze_epoch": 2,
+  "epoch_step": 10,
   "gamma": [
-    1
+    0.5, 0.5, 0.5, 0.5, 0.5
   ],
   "csv": [
-    "/home/andrewheschl/Documents/ICCV-2023-VRL/split_saves/model_experiments.csv"
+    "/home/andrew.heschl/Documents/ICCV-2023-VRL/split_saves/model_experiments.csv"
   ],
-  "image_dir_20": "/home/andrewheschl/Documents/Dataset/DND/2020/images",
-  "image_dir_21": "/home/andrewheschl/Documents/Dataset/DND/2021/images",
+  "image_dir_20": "/home/andrew.heschl/Documents/Dataset/DND/2020/images",
+  "image_dir_21": "/home/andrew.heschl/Documents/Dataset/DND/2021/images",
   "model_to_load": [
     ""
   ],
-  "model": "/home/andrewheschl/Documents/ICCV-2023-VRL/src/json_models/model_definitions/mobilnetv2.json",
-  "model_name": "fsdkjl;",
+  "model": "/home/andrew.heschl/Documents/ICCV-2023-VRL/src/json_models/model_definitions/mobilnetv2.json",
+  "model_name": "test",
   "log_name": [
     "test.log"
   ]

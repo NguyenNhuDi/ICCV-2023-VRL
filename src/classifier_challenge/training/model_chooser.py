@@ -2,6 +2,7 @@ from torchvision import models
 from torch import nn
 import warnings
 import sys
+sys.path.append("/home/andrew.heschl/Documents/ICCV-2023-VRL")
 from src.json_models.model_generator import ModelGenerator
 from src.json_models.modules import ModuleStateController
 
