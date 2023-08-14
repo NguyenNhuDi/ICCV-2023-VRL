@@ -72,6 +72,8 @@ if __name__ == '__main__':
     train = args['which_train_set']
     val = args['which_val_set']
 
+    cut_mix = args['cut_mix']
+
     image_paths = glob.glob(f'{image_dir_20}/*.jpg')
     image_paths += glob.glob(f'{image_dir_21}/*.jpg')
 
@@ -242,7 +244,8 @@ if __name__ == '__main__':
                                train=train,
                                model=model,
                                model_name=f'{model_name} -- {i + 1}',
-                               out_name=out_name[i]
+                               out_name=out_name[i],
+                               cutmix=cut_mix
                                )
 
         submit_json = trainer()

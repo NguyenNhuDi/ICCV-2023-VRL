@@ -44,7 +44,8 @@ class ModelTrainer:
                  model='efficientnet_b6',
                  model_name='',
                  out_name='out.log',
-                 tile_size=64):
+                 tile_size=64,
+                 cutmix=True):
 
         self.images = images
         self.best_save_name = best_save_name
@@ -70,6 +71,7 @@ class ModelTrainer:
         self.image_size = image_size
         self.tile_size = tile_size
         self.current_train_dict = current_train_dict
+        self.cut_mix = cutmix
 
         # making json to submit
         self.submit_json = submit_json
@@ -165,10 +167,12 @@ class ModelTrainer:
 
         val_dsal.join()
 
+        cut_mix = self.cut_mix_function if self.cut_mix else None
+
         train_dsal = DSAL(images=train_set,
                           yml=self.labels,
                           read_and_transform_function=ModelTrainer.transform_image_label,
-                          cut_mix_function=self.cut_mix_function,
+                          cut_mix_function=cut_mix,
                           batch_size=self.batch_size,
                           epochs=self.epochs,
                           num_processes=self.num_processes,
