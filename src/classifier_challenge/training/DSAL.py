@@ -1,10 +1,8 @@
 import math
 import multiprocessing as mp
-import os.path
 import numpy as np
 import queue
 import time
-import glob
 import torch
 
 """NOTE in the documentation transforms and augmented are used interchangeably"""
@@ -13,7 +11,7 @@ import torch
 DSAL (Dataset and loader)
     This clas will transform and batch images/labels/labels for machine learning tasks
     To use this class, make sure to define a function that will read and transform your images/labels
-    this function should have the (image_dir, label_obj, transform) as parameters
+    this function should have the (images, label_obj, transform) as parameters
 
     If DSAL is used for csv label reading, simply pass in the absolute path to the label csv into the
     yml parameter slot
@@ -21,7 +19,7 @@ DSAL (Dataset and loader)
 
 Attributes
 ----------------------------------------------------------------
-    image_dir : np.array
+    images : np.array
         a numpy array holding all the path of the images
 
     yml : np.array
@@ -80,7 +78,7 @@ Methods
 
         parameters:
 
-            image_dir : str
+            images : str
                 the absolute path to the directory containing the images
 
             yml : str
@@ -89,7 +87,7 @@ Methods
             read_and_transform_function : function
                 the function that the user wrote to read a image and label path and
                 apply transformations to it. The parameters should be in the form
-                (image_dir, yml, transform). It should also return the transformed
+                (images, yml, transform). It should also return the transformed
                 image and label
 
             batch_size : int, optional
@@ -132,8 +130,8 @@ Methods
         put images and labels in a batch and enqueue it into image_label_queue
 
         parameters:
-            image_paths : np.array
-                the array holding all the image paths
+            images_arr : np.array
+                the array holding all the images
 
             label_paths : np.array
                 the array holding all the label paths
@@ -197,7 +195,8 @@ class DSAL:
         assert num_processes >= 1, 'The number of processes entered is <= 0'
 
         # storing parameters
-        self.image_dir = np.array(images)
+        self.images = images
+
         # check to see if this is a path to labels or label csv
         self.yml = list(yml)
 
@@ -217,7 +216,16 @@ class DSAL:
         self.command_queue = mp.JoinableQueue()
 
         # storing indexes to the path array
-        self.index_arr = np.array([i for i in range(len(self.image_dir))])
+        self.index_arr = []
+        for i in range(len(self.images)):
+
+            if cut_mix_function is not None:
+                self.index_arr.append((i, True))
+
+            self.index_arr.append((i, False))
+
+
+        self.index_arr = np.array(self.index_arr)
 
         self.total_size = self.epochs * self.__len__()
 
@@ -228,7 +236,7 @@ class DSAL:
             proc = mp.Process(target=self.__batch_image_label__,
                               args=(self.read_and_transform_function,
                                     self.cut_mix_function,
-                                    self.image_dir,
+                                    self.images,
                                     yml,
                                     self.index_queue,
                                     self.image_label_queue,
@@ -284,7 +292,7 @@ class DSAL:
     @staticmethod
     def __batch_image_label__(read_and_transform_function,
                               cut_mix_function,
-                             image_paths: np.array,
+                             images_arr: np.array,
                              yml,
                              index_queue: mp.JoinableQueue,
                              image_label_queue: mp.JoinableQueue,
@@ -302,28 +310,29 @@ class DSAL:
             image_batch = []
             label_batch = []
 
-            for index in indexes:
-                image_path = image_paths[index]
+            for item in indexes:
+                index, cut_mix = item
 
-                image_name = os.path.basename(image_path)
+
+                image, image_name = images_arr[index]
 
                 labels = yml[image_name]
 
                 # Transforming it normally
-                image, label = read_and_transform_function(image_path, labels, transform, mean, std)
+                if not cut_mix:
+                    image, label = read_and_transform_function(image, labels, transform, mean, std)
+                    image_batch.append(image)
+                    label_batch.append(label)
 
                 # Cut mixing it :D
-
-                if cut_mix_function is not None:
-                    cm_image, cm_label = cut_mix_function(image_path, labels, transform, mean, std)
-
+                else:
+                    cm_image, cm_label = cut_mix_function(image, image_name, labels, transform, mean, std)
                     image_batch.append(cm_image)
                     label_batch.append(cm_label)
 
 
 
-                image_batch.append(image)
-                label_batch.append(label)
+
 
             image_batch = torch.stack(image_batch, dim=0)
             label_batch = torch.stack(label_batch, dim=0)
@@ -368,7 +377,7 @@ class DSAL:
 
     # create batch method
     def __len__(self):
-        return len(self.image_dir)
+        return len(self.images)
 
     def get_item(self):
         try:
@@ -385,7 +394,6 @@ class DSAL:
             return image, label
 
         except queue.Empty:
-            print('i am waiting sire', flush=True)
             time.sleep(0.01)
             return self.get_item()
 

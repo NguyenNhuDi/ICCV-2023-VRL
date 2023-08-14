@@ -31,6 +31,31 @@ def read_image(image_dir):
     return all_months, march, april, may
 
 
+def read_val_image(image_dir, labels):
+    # out_image = np.array(Image.open(image_path), dtype='float32') / 255.0
+    all_months = []
+    march = []
+    april = []
+    may = []
+    for i in tqdm(image_dir):
+        image_name = os.path.basename(i)
+
+        if image_name not in labels:
+            continue
+
+        curr_item = (np.array(Image.open(i), dtype='uint8'), image_name)
+        all_months.append(curr_item)
+
+        if image_name[5] == '3':
+            march.append(curr_item)
+        elif image_name[5] == '4':
+            april.append(curr_item)
+        else:
+            may.append(curr_item)
+
+    return all_months, march, april, may
+
+
 def process_image(image, transform):
     out_image = image[0]
 
@@ -46,24 +71,6 @@ def process_image(image, transform):
     return out_image, image_name
 
 
-def evaluate(model, val_batches, device):
-    model.eval()
-    # total_correct = 0
-    # total_loss = 0
-    # total = 0
-    for batch in val_batches:
-        image, label = batch
-        image, label = image.to(device), label.to(device)
-
-        with torch.no_grad():
-            outputs = model(image)
-            for i in range(len(outputs)):
-                prediction_index = torch.argmax(outputs[i]).cpu().numpy()
-
-    # loss = total_loss / total
-    # accuracy = total_correct / total
-
-
 def generate(model_path, images_arr, batch_size, transform, predict_dict):
     model = torch.load(model_path)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -72,7 +79,6 @@ def generate(model_path, images_arr, batch_size, transform, predict_dict):
     image_batch = []
     name_batch = []
 
-    counter = 0
     batch_counter = 0
 
     temp_img = []
@@ -140,3 +146,27 @@ def make_prediction(predict_dict, models_paths, images, batch_size, image_size, 
             predict_dict = generate(model_path, images, batch_size, transform, predict_dict)
 
     return predict_dict
+
+
+"""This is for subset chooser portion"""
+
+
+def make_single_prediction(predict_dict, model_path, images, batch_size, image_size, mean, std, run_amount):
+    transform = A.Compose(
+        transforms=[
+            A.Resize(image_size, image_size),
+            A.Lambda(image=lambda_transform),
+            A.Normalize(mean=mean, std=std, max_pixel_value=1.0)
+        ],
+        p=1.0,
+    )
+
+    print(f'\n\n\n ----curr model {os.path.basename(model_path)}---\n\n')
+
+    for i in range(run_amount):
+        print(f'\n\n ---iteration {i}---\n\n')
+        predict_dict = generate(model_path, images, batch_size, transform, predict_dict)
+
+    return predict_dict
+
+

@@ -23,8 +23,7 @@ class ModelTrainer:
                  best_save_name,
                  last_save_name,
                  save_dir,
-                 image_dir_20,
-                 image_dir_21,
+                 images,
                  train_transform=None,
                  val_transform=None,
                  weight_decay=0,
@@ -47,8 +46,7 @@ class ModelTrainer:
                  out_name='out.log',
                  tile_size=64):
 
-        self.image_dir_20 = image_dir_20
-        self.image_dir_21 = image_dir_21
+        self.images = images
         self.best_save_name = best_save_name
         self.last_save_name = last_save_name
         self.train_transform = train_transform
@@ -106,43 +104,34 @@ class ModelTrainer:
         df = pd.read_csv(self.csv)
         data_dict = df.to_dict(orient='list')
 
-        for image in data_dict['val']:
-            image = str(image)
-            if image != 'nan':
-                if int(image[5]) in self.months and int(image[3]) in self.val:
+        for image_name in data_dict['val']:
+            image_name = str(image_name)
+            if image_name != 'nan':
+                if int(image_name[5]) in self.months and int(image_name[3]) in self.val:
+                    index = ModelTrainer.__search__(image_name, 0, len(self.images), self.images)
 
-                    if int(image[5]) == 4:
-                        if image[3] == '0':
-                            val_set.append(os.path.join(self.image_dir_20, image))
-                        else:
-                            val_set.append(os.path.join(self.image_dir_21, image))
+                    image = self.images[index][0]
 
-                    if image[3] == '0':
-                        val_set.append(os.path.join(self.image_dir_20, image))
-                    else:
-                        val_set.append(os.path.join(self.image_dir_21, image))
+                    if int(image_name[5]) == 4:
+                        val_set.append((image, image_name))
+                    val_set.append((image, image_name))
 
-        for image in data_dict['train']:
-            image = str(image)
-            if image != 'nan':
-                if int(image[5]) in self.months and int(image[3]) in self.val:
+        for image_name in data_dict['train']:
+            image_name = str(image_name)
+            if image_name != 'nan':
+                if int(image_name[5]) in self.months and int(image_name[3]) in self.val:
+                    index = ModelTrainer.__search__(image_name, 0, len(self.images), self.images)
+                    image = self.images[index][0]
 
-                    if int(image[5]) == 4:
+                    if int(image_name[5]) == 4:
+                        train_set.append((image, image_name))
 
-                        if image[3] == '0':
-                            train_set.append(os.path.join(self.image_dir_20, image))
-                        else:
-                            train_set.append(os.path.join(self.image_dir_21, image))
-
-                    if image[3] == '0':
-                        train_set.append(os.path.join(self.image_dir_20, image))
-                    else:
-                        train_set.append(os.path.join(self.image_dir_21, image))
+                    train_set.append((image, image_name))
 
         train_test_dsal = DSAL(images=train_set,
                                yml=self.labels,
                                read_and_transform_function=ModelTrainer.transform_image_label,
-                               cut_mix_function=self.cut_mix_function,
+                               cut_mix_function=None,
                                batch_size=self.batch_size,
                                epochs=1,
                                num_processes=self.num_processes,
@@ -172,7 +161,6 @@ class ModelTrainer:
         val_dsal.start()
 
         for i in tqdm(range(val_dsal.num_batches)):
-            print('in da loop')
             val_batches.append(val_dsal.get_item())
 
         val_dsal.join()
@@ -384,6 +372,23 @@ class ModelTrainer:
         return mean, std
 
     @staticmethod
+    def __search__(x, l, r, arr):
+        if l >= r:
+            return -1
+
+        m = (l + r) // 2
+
+        if x == arr[m][1]:
+            return m
+
+        # item is to the left
+        elif x < arr[m][1]:
+            return ModelTrainer.__search__(x, l, m, arr)
+        # item is to the right
+        else:
+            return ModelTrainer.__search__(x, m + 1, r, arr)
+
+    @staticmethod
     def get_label(label):
         if label == 'unfertilized':
             return 0
@@ -400,14 +405,11 @@ class ModelTrainer:
         else:
             return 6
 
-    def cut_mix_function(self, image_path, label, transform, mean=None, std=None):
-
-        base_path = os.path.dirname(image_path)
-        image_name = os.path.basename(image_path)
+    def cut_mix_function(self, image, image_name, label, transform, mean=None, std=None):
         year = image_name[3]
         month = image_name[5]
 
-        a = np.array(Image.open(image_path), dtype='uint8')
+        a = image.copy()
 
         out_label = ModelTrainer.get_label(label)
 
@@ -417,7 +419,7 @@ class ModelTrainer:
 
         random_index = random.randint(0, len(curr_class_arr) - 1)
 
-        b = np.array(Image.open(os.path.join(base_path, curr_class_arr[random_index])), dtype='uint8')
+        b = curr_class_arr[random_index].copy()
 
         temp = A.Compose(
             transforms=[
@@ -434,7 +436,6 @@ class ModelTrainer:
 
         i = 0
         while i < (1024 // self.tile_size) - 1:
-            # print(f'i: {i}')
             j = 0
             while j < (1024 // self.tile_size) - 1:
                 new_cell_0 = b[i * self.tile_size: (i + 1) * self.tile_size,
@@ -471,8 +472,8 @@ class ModelTrainer:
         return out_image, out_label
 
     @staticmethod
-    def transform_image_label(image_path, label, transform, mean=None, std=None):
-        out_image = np.array(Image.open(image_path), dtype='uint8')
+    def transform_image_label(image, label, transform, mean=None, std=None):
+        out_image = image.copy()
 
         out_label = ModelTrainer.get_label(label)
 

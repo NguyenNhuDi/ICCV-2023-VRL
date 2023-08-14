@@ -3,11 +3,33 @@ import argparse
 import json
 import albumentations as A
 import os
-import torch
+import pandas as pd
+import yaml
+import numpy as np
+import glob
+from PIL import Image
+from tqdm import tqdm
 
 
-def lambda_transform(x: torch.Tensor, **kwargs) -> torch.Tensor:
+def lambda_transform(x: np.array, **kwargs) -> np.array:
     return x / 255
+
+
+def __search__(x, l, r, arr):
+    if l >= r:
+        return -1
+
+    m = (l + r) // 2
+
+    if x == arr[m][1]:
+        return m
+
+    # item is to the left
+    elif x < arr[m][1]:
+        return __search__(x, l, m, arr)
+    # item is to the right
+    else:
+        return __search__(x, m + 1, r, arr)
 
 
 if __name__ == '__main__':
@@ -49,6 +71,11 @@ if __name__ == '__main__':
     months = args['which_months']
     train = args['which_train_set']
     val = args['which_val_set']
+
+    image_paths = glob.glob(f'{image_dir_20}/*.jpg')
+    image_paths += glob.glob(f'{image_dir_21}/*.jpg')
+
+    image_paths.sort(key=lambda x: os.path.basename(x))
 
     train_transform = A.Compose(
         transforms=[
@@ -100,14 +127,102 @@ if __name__ == '__main__':
 
     }
 
+    with open(yaml_path, 'r') as f:
+        yml_labels = yaml.safe_load(f)
+
+    print(f'--- OPENING IMAGES ---')
+    opened_images = []
+    for path in tqdm(image_paths):
+        image_name = os.path.basename(path)
+        if image_name in yml_labels:
+            temp = np.array(Image.open(path), dtype='uint8')
+            opened_images.append((temp, image_name))
+
     for i in range(len(csv)):
-        trainer = ModelTrainer(yaml_path=yaml_path,
+
+        current_train_dict = {
+            '0': {
+                '3': {
+                    'unfertilized': [],
+                    '_PKCa': [],
+                    'N_KCa': [],
+                    'NP_Ca': [],
+                    'NPK_': [],
+                    'NPKCa': [],
+                    'NPKCa+m+s': []
+                },
+
+                '4': {
+                    'unfertilized': [],
+                    '_PKCa': [],
+                    'N_KCa': [],
+                    'NP_Ca': [],
+                    'NPK_': [],
+                    'NPKCa': [],
+                    'NPKCa+m+s': []
+                },
+                '5': {
+                    'unfertilized': [],
+                    '_PKCa': [],
+                    'N_KCa': [],
+                    'NP_Ca': [],
+                    'NPK_': [],
+                    'NPKCa': [],
+                    'NPKCa+m+s': []
+                }
+            },
+            '1': {
+                '3': {
+                    'unfertilized': [],
+                    '_PKCa': [],
+                    'N_KCa': [],
+                    'NP_Ca': [],
+                    'NPK_': [],
+                    'NPKCa': [],
+                    'NPKCa+m+s': []
+                },
+
+                '4': {
+                    'unfertilized': [],
+                    '_PKCa': [],
+                    'N_KCa': [],
+                    'NP_Ca': [],
+                    'NPK_': [],
+                    'NPKCa': [],
+                    'NPKCa+m+s': []
+                },
+                '5': {
+                    'unfertilized': [],
+                    '_PKCa': [],
+                    'N_KCa': [],
+                    'NP_Ca': [],
+                    'NPK_': [],
+                    'NPKCa': [],
+                    'NPKCa+m+s': []
+                }
+            }
+        }
+
+        df = pd.read_csv(csv[i])
+        data_dict = df.to_dict(orient='list')
+
+        for image_name in data_dict['train']:
+            class_label = yml_labels[image_name]
+
+            year = image_name[3]
+            month = image_name[5]
+
+            index = __search__(image_name, 0, len(opened_images), opened_images)
+
+            current_train_dict[year][month][class_label].append(opened_images[index][0])
+
+        trainer = ModelTrainer(labels=yml_labels,
+                               current_train_dict=current_train_dict,
                                best_save_name=os.path.join(save_dir, best_save_name[i]),
                                last_save_name=os.path.join(save_dir, last_save_name[i]),
                                save_dir=save_dir,
                                csv=csv[i],
-                               image_dir_20=image_dir_20,
-                               image_dir_21=image_dir_21,
+                               images=opened_images,
                                train_transform=train_transform,
                                val_transform=val_transform,
                                image_size=image_size,
@@ -129,6 +244,7 @@ if __name__ == '__main__':
                                model_name=f'{model_name} -- {i + 1}',
                                out_name=out_name[i]
                                )
+
         submit_json = trainer()
 
     with open(f'{model_name}.json', 'w') as json_file:

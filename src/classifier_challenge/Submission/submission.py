@@ -5,7 +5,9 @@ import json
 import yaml
 from subset_model_chooser import SubsetModelChooser
 from submission_utils import read_image
-
+from submission_utils import make_prediction
+from submission_utils import read_val_image
+import os
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -20,7 +22,7 @@ if __name__ == '__main__':
     with open(args.config) as f:
         args = json.load(f)
 
-    all_model_paths = args['all_models_paths']
+    all_month_models = args['all_models_paths']
     test_dir = args['test_dir']
     batch_size = args['batch_size']
     all_month_sizes = args['all_month_sizes']
@@ -47,7 +49,7 @@ if __name__ == '__main__':
 
     # subset chooser
     yaml_path = args['yaml_path']
-    unique_val_images = args['unique_val_images']
+    val_images = args['val_images']
 
     with open(yaml_path, 'r') as f:
         labels = yaml.safe_load(f)
@@ -55,65 +57,113 @@ if __name__ == '__main__':
     test_dir = np.array(glob.glob(f'{test_dir}/*.jpg'))
     all_images, march_images, april_images, may_images = read_image(test_dir)
 
-    val_dir = np.array(glob.glob(f'{unique_val_images}/*.jpg'))
-    all_val_images, march_val_images, april_val_images, may_val_images = read_image(val_dir)
+    val_dir = []
 
-    subset_finder = SubsetModelChooser(test_images=march_val_images,
-                                       labels=labels,
-                                       models=march_models,
-                                       mean=march_means,
-                                       std=march_stds,
-                                       image_sizes=march_sizes,
-                                       subset_size=4,
-                                       batch_size=batch_size
-                                       )
-    subset_finder()
+    for path in val_images:
+        val_dir += glob.glob(f'{path}/*.jpg')
 
-    # predict_dict = {}
-    #
-    # print(f'\n\n---Running All Month Models---\n\n')
-    #
-    # predict_dict = make_prediction(predict_dict=predict_dict, models_paths=all_model_paths, images=all_images,
-    #                                batch_size=batch_size, image_size=all_month_sizes, means=all_month_means,
-    #                                std=all_month_stds)
-    #
-    # print(f'\n\n---Running March Models---\n\n')
-    #
-    # predict_dict = make_prediction(predict_dict=predict_dict, models_paths=march_models, images=march_images,
-    #                                batch_size=batch_size, image_size=march_sizes, means=march_means, std=march_stds)
-    #
-    # print(f'\n\n---Running April Modles---\n\n')
-    #
-    # predict_dict = make_prediction(predict_dict=predict_dict, models_paths=april_models, images=april_images,
-    #                                batch_size=batch_size, image_size=april_sizes, means=april_means, std=april_stds)
-    # print(f'\n\n---Running May Models---\n\n')
-    #
-    # predict_dict = make_prediction(predict_dict=predict_dict, models_paths=may_models, images=may_images,
-    #                                batch_size=batch_size, image_size=may_sizes, means=may_means, std=may_stds)
-    #
-    # predictions_20 = []
-    # predictions_21 = []
-    #
-    # for key in predict_dict:
-    #     curr_item = np.array(predict_dict[key])
-    #
-    #     prediction = curr_item.argmax()
-    #
-    #     if key[0:4] == '2020':
-    #         predictions_20.append((key, prediction))
-    #     else:
-    #         predictions_21.append((key, prediction))
-    #
-    # f = open(os.path.join(save_path, 'predictions_WW2020.txt'), 'w')
-    #
-    # for i in predictions_20:
-    #     f.write(f'{i[0]} {i[1]}\n')
-    #
-    # f.close()
-    #
-    # f = open(os.path.join(save_path, 'predictions_WR2021.txt'), 'w')
-    #
-    # for i in predictions_21:
-    #     f.write(f'{i[0]} {i[1]}\n')
-    #
-    # f.close()
+    val_dir = np.array(val_dir)
+
+    all_month_val_images, march_val_images, april_val_images, may_val_images = read_val_image(val_dir, labels)
+
+    subset_finder_all_month = SubsetModelChooser(test_images=all_month_val_images,
+                                                 labels=labels,
+                                                 models=all_month_models,
+                                                 mean=all_month_means,
+                                                 std=all_month_stds,
+                                                 image_sizes=all_month_sizes,
+                                                 batch_size=batch_size,
+                                                 )
+
+    subset_finder_march = SubsetModelChooser(test_images=march_val_images,
+                                             labels=labels,
+                                             models=march_models,
+                                             mean=march_means,
+                                             std=march_stds,
+                                             image_sizes=march_sizes,
+                                             batch_size=batch_size,
+                                             )
+
+    subset_finder_april = SubsetModelChooser(test_images=april_val_images,
+                                             labels=labels,
+                                             models=april_models,
+                                             mean=april_means,
+                                             std=april_stds,
+                                             image_sizes=april_sizes,
+                                             batch_size=batch_size,
+                                             )
+    subset_finder_may = SubsetModelChooser(test_images=may_val_images,
+                                           labels=labels,
+                                           models=may_models,
+                                           mean=may_means,
+                                           std=may_stds,
+                                           image_sizes=may_sizes,
+                                           batch_size=batch_size,
+                                           )
+    print(f'\n\n\n----- FINDING BEST ALL MONTH SUBSET -----\n\n\n')
+
+    am_best_models, am_best_means, am_best_std = subset_finder_all_month()
+
+    print(f'\n\n\n----- FINDING BEST MARCH SUBSET -----\n\n\n')
+
+    march_best, march_best_mean, march_best_std = subset_finder_march()
+
+    print(f'\n\n\n----- FINDING BEST APRIL SUBSET -----\n\n\n')
+
+    april_best, april_best_mean, april_best_std = subset_finder_april()
+
+    print(f'\n\n\n----- FINDING BEST MAY SUBSET -----\n\n\n')
+
+    may_best, may_best_mean, may_best_std = subset_finder_may()
+
+    predict_dict = {}
+
+    print(f'\n\n---Running All Month Models---\n\n')
+
+    predict_dict = make_prediction(predict_dict=predict_dict, models_paths=am_best_models, images=all_images,
+                                   batch_size=batch_size, image_size=all_month_sizes, means=am_best_means,
+                                   std=am_best_std, run_amount=run_amount)
+
+    print(f'\n\n---Running March Models---\n\n')
+
+    predict_dict = make_prediction(predict_dict=predict_dict, models_paths=march_best, images=march_images,
+                                   batch_size=batch_size, image_size=march_sizes, means=march_best_mean,
+                                   std=march_best_std, run_amount=run_amount)
+
+    print(f'\n\n---Running April Modles---\n\n')
+
+    predict_dict = make_prediction(predict_dict=predict_dict, models_paths=april_best, images=april_images,
+                                   batch_size=batch_size, image_size=april_sizes, means=april_best_mean,
+                                   std=april_best_std, run_amount=run_amount)
+    print(f'\n\n---Running May Models---\n\n')
+
+    predict_dict = make_prediction(predict_dict=predict_dict, models_paths=may_best, images=may_images,
+                                   batch_size=batch_size, image_size=may_sizes, means=may_best_mean, std=may_best_std,
+                                   run_amount=run_amount)
+
+    predictions_20 = []
+    predictions_21 = []
+
+    for key in predict_dict:
+        curr_item = np.array(predict_dict[key])
+
+        prediction = curr_item.argmax()
+
+        if key[0:4] == '2020':
+            predictions_20.append((key, prediction))
+        else:
+            predictions_21.append((key, prediction))
+
+    f = open(os.path.join(save_path, 'predictions_WW2020.txt'), 'w')
+
+    for i in predictions_20:
+        f.write(f'{i[0]} {i[1]}\n')
+
+    f.close()
+
+    f = open(os.path.join(save_path, 'predictions_WR2021.txt'), 'w')
+
+    for i in predictions_21:
+        f.write(f'{i[0]} {i[1]}\n')
+
+    f.close()
