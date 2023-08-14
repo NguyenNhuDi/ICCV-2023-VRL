@@ -15,7 +15,7 @@ class SubsetModelChooser:
                  image_sizes,
                  batch_size=16,
                  run_amount=1,
-                 score_constant=5):
+                 score_constant=1):
 
         self.test_images = test_images
         self.labels = labels
@@ -91,11 +91,11 @@ class SubsetModelChooser:
                     self.dp[model_name] = predict_dict
 
             score_achieved = self.__calculate_score__(predict_dict)
-            score_total = len(predict_dict) * len(curr_model_subset) * self.score_constant
+            # score_total = len(predict_dict) * len(curr_model_subset) * self.score_constant
 
-            grade = score_achieved / score_total
+            # grade = score_achieved / len(curr_model_subset)
 
-            subset_performance.append((grade, curr_model_subset, curr_mean_subset, curr_std_subset))
+            subset_performance.append((score_achieved, curr_model_subset, curr_mean_subset, curr_std_subset))
 
         best_score = -1e9
         best_index = -1
@@ -149,3 +149,8 @@ class SubsetModelChooser:
                     n = curr_item[index]
                     score -= (n * (n + 1)) / 2
         return score
+
+
+
+
+

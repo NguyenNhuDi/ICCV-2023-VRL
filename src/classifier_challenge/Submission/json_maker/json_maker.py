@@ -2,17 +2,15 @@
 import json
 import argparse
 
- 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
-    prog='Model Trainer',
-    description='This program will train a model',
-    epilog='Vision Research Lab')
+        prog='Model Trainer',
+        description='This program will train a model',
+        epilog='Vision Research Lab')
     parser.add_argument('-c', '--config', required=True,
                         help='The path to the config file.')
     args = parser.parse_args()
-
 
     with open(args.config) as f:
         args = json.load(f)
@@ -48,7 +46,6 @@ if __name__ == '__main__':
     for j in json_paths:
         all_json.append(json.load(open(j)))
 
-
     for j in all_json:
         for key in j:
             curr_item = j[key]
@@ -56,7 +53,6 @@ if __name__ == '__main__':
             if type(curr_item) == type([]):
                 for i in curr_item:
                     json_dict[key].append(i)
-
 
     json_string = json.dumps(json_dict, indent=4)
     with open(file_path, "w") as json_file:

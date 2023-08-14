@@ -11,7 +11,6 @@ def lambda_transform(x: torch.Tensor, **kwargs) -> torch.Tensor:
 
 
 def read_image(image_dir):
-    # out_image = np.array(Image.open(image_path), dtype='float32') / 255.0
     all_months = []
     march = []
     april = []
