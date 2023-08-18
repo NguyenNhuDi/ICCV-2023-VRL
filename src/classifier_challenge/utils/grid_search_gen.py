@@ -1,44 +1,24 @@
 from itertools import product
 import json as json
-import argparse
-import os
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(
-    prog='Winter Wheat, Winter Rye Classifier pre process',
-    description='This program will create different val and train set for classification of winter wheat and '
-                'winter rye based on a  and hash function',
-    epilog='Vision Research Lab')
-
-    parser.add_argument('-c', '--config', required=True,
-                        help='The path to the config file')
-    args = parser.parse_args()
-
-    with open(args.config) as f:
-        args = json.load(f)
-
-    lr = args['lr']
-    m = args['m']
-    wd = args['wd']
-    g = args['g']
-    image_size = args['image_size']
-    batch_size = args['batch_size']
-    epochs = args['epochs']
-    save_dir = args['save_dir']
-    model = args['model']
-    model_name = args['model_name']
+    lr = [('lr', 0.1), ('lr', 0.01), ('lr', 0.05), ('lr', 0.5)]
+    m = [('m', 0.8), ('m', 0.9), ('m', 0.7), ('m', 0.6)]
+    wd = [('wd', 0.001), ('wd', 0.000001), ('wd', 0.001), ('wd', 0)]
+    g = [('g', 0.85), ('g', 0.5), ('g', 0.25)]
 
     out_json_0 = {"yaml_path": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml'
                                '.yml',
                   "best_save_name": [],
                   "last_save_name": [],
-                  "save_dir": save_dir,
+                  "save_dir": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training'
+                              '/Grid_Searching/EN2S',
                   "which_months": [3, 4, 5],
                   "which_val_set": [0, 1],
                   "which_train_set": [0, 1],
-                  "image_size": image_size,
-                  "batch_size": batch_size,
-                  "epochs": epochs,
+                  "image_size": 384,
+                  "batch_size": 32,
+                  "epochs": 63,
                   "weight_decay": [],
                   "num_processes": 20,
                   "learning_rate": [],
@@ -50,8 +30,8 @@ if __name__ == '__main__':
                   "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
                   "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
-                  "model": model,
-                  "model_name": model_name,
+                  "model": 'efficientnet_v2_l',
+                  "model_name": 'EFFICIENT NET 2 L',
                   "log_name": [],
                   "cut_mix": False
 
@@ -60,13 +40,13 @@ if __name__ == '__main__':
     out_json_1 = {"yaml_path": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml',
                   "best_save_name": [],
                   "last_save_name": [],
-                  "save_dir": save_dir,
+                  "save_dir": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Grid_Searching/EN2L',
                   "which_months": [3, 4, 5],
                   "which_val_set": [0, 1],
                   "which_train_set": [0, 1],
-                  "image_size": image_size,
-                  "batch_size": batch_size,
-                  "epochs": epochs,
+                  "image_size": 384,
+                  "batch_size": 32,
+                  "epochs": 63,
                   "weight_decay": [],
                   "num_processes": 20,
                   "learning_rate": [],
@@ -78,8 +58,8 @@ if __name__ == '__main__':
                   "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
                   "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
-                  "model": model,
-                  "model_name": model_name,
+                  "model": 'efficientnet_v2_l',
+                  "model_name": 'EFFICIENT NET 2 L',
                   "log_name": [],
                   "cut_mix": False
 
@@ -88,13 +68,13 @@ if __name__ == '__main__':
     out_json_2 = {"yaml_path": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml',
                   "best_save_name": [],
                   "last_save_name": [],
-                  "save_dir": save_dir,
+                  "save_dir": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Grid_Searching/EN2L',
                   "which_months": [3, 4, 5],
                   "which_val_set": [0, 1],
                   "which_train_set": [0, 1],
-                  "image_size": image_size,
-                  "batch_size": batch_size,
-                  "epochs": epochs,
+                  "image_size": 384,
+                  "batch_size": 32,
+                  "epochs": 63,
                   "weight_decay": [],
                   "num_processes": 20,
                   "learning_rate": [],
@@ -106,8 +86,8 @@ if __name__ == '__main__':
                   "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
                   "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
-                  "model": model,
-                  "model_name": model_name,
+                  "model": 'efficientnet_v2_l',
+                  "model_name": 'EFFICIENT NET 2 L',
                   "log_name": [],
                   "cut_mix": False
 
@@ -116,13 +96,13 @@ if __name__ == '__main__':
     out_json_3 = {"yaml_path": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml',
                   "best_save_name": [],
                   "last_save_name": [],
-                  "save_dir": save_dir,
+                  "save_dir": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Grid_Searching/EN2L',
                   "which_months": [3, 4, 5],
                   "which_val_set": [0, 1],
                   "which_train_set": [0, 1],
-                  "image_size": image_size,
-                  "batch_size": batch_size,
-                  "epochs": epochs,
+                  "image_size": 384,
+                  "batch_size": 32,
+                  "epochs": 63,
                   "weight_decay": [],
                   "num_processes": 20,
                   "learning_rate": [],
@@ -134,8 +114,8 @@ if __name__ == '__main__':
                   "image_dir_20": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images',
                   "image_dir_21": '/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images',
                   "model_to_load": [],
-                  "model": model,
-                  "model_name": model_name,
+                  "model": 'efficientnet_v2_l',
+                  "model_name": 'EFFICIENT NET 2 L',
                   "log_name": [],
                   "cut_mix": False
 
@@ -230,20 +210,20 @@ if __name__ == '__main__':
 
     json_string_0 = json.dumps(out_json_0, indent=2)
 
-    with open(os.path.join(save_dir,f'test_0.json'), 'w') as out:
+    with open('test_0.json', 'w') as out:
         out.write(json_string_0)
 
     json_string_1 = json.dumps(out_json_1, indent=2)
 
-    with open(os.path.join(save_dir,f'test_1.json'), 'w') as out:
+    with open('test_1.json', 'w') as out:
         out.write(json_string_1)
 
     json_string_2 = json.dumps(out_json_2, indent=2)
 
-    with open(os.path.join(save_dir,f'test_2.json'), 'w') as out:
+    with open('test_2.json', 'w') as out:
         out.write(json_string_2)
 
     json_string_3 = json.dumps(out_json_3, indent=2)
 
-    with open(os.path.join(save_dir,f'test_3.json'), 'w') as out:
+    with open('test_3.json', 'w') as out:
         out.write(json_string_3)

@@ -1,36 +1,13 @@
 {
-    "save_dirs":
-      {
-        "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\NEW_CSV\\Efficient Net": [
-          "en_0.csv",
-          "en_1.csv",
-          "en_2.csv",
-          "en_3.csv",
-          "en_4.csv"
-        ],
-        "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\NEW_CSV\\Efficient Net V2": [
-          "en2_0.csv",
-          "en2_1.csv",
-          "en2_2.csv",
-          "en2_3.csv",
-          "en2_4.csv"
-        ],
-        "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\NEW_CSV\\Resnet": [
-          "rn_0.csv",
-          "rn_1.csv",
-          "rn_2.csv",
-          "rn_3.csv",
-          "rn_4.csv"
-        ],
-        "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\NEW_CSV\\ResNeXt": [
-          "rx_0.csv",
-          "rx_1.csv",
-          "rx_2.csv",
-          "rx_3.csv",
-          "rx_4.csv"
-        ]
-      },
-    "yaml_paths": [
-      "C:\\Users\\coanh\\Desktop\\Uni Work\\ICCV 2023\\DND-Diko-WWWR\\train_set.yml"
-    ]
-  }
+  "num_models": 5,
+  "yaml_paths": [
+    "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/labels_trainval.yml",
+    "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/labels_trainval.yml"
+  ],
+  "output_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV",
+
+  "folds" : 5,
+  "seed": 30111827
+
+
+}

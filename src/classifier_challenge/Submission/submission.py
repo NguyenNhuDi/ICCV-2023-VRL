@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import json
 import yaml
-from subset_model_chooser import SubsetModelChooser
+from subset_finder import SubsetFinder
 from submission_utils import read_image
 from submission_utils import make_prediction
 from submission_utils import read_val_image
@@ -66,40 +66,40 @@ if __name__ == '__main__':
 
     all_month_val_images, march_val_images, april_val_images, may_val_images = read_val_image(val_dir, labels)
 
-    subset_finder_all_month = SubsetModelChooser(test_images=all_month_val_images,
-                                                 labels=labels,
-                                                 models=all_month_models,
-                                                 mean=all_month_means,
-                                                 std=all_month_stds,
-                                                 image_sizes=all_month_sizes,
-                                                 batch_size=batch_size,
-                                                 )
-
-    subset_finder_march = SubsetModelChooser(test_images=march_val_images,
-                                             labels=labels,
-                                             models=march_models,
-                                             mean=march_means,
-                                             std=march_stds,
-                                             image_sizes=march_sizes,
-                                             batch_size=batch_size,
-                                             )
-
-    subset_finder_april = SubsetModelChooser(test_images=april_val_images,
-                                             labels=labels,
-                                             models=april_models,
-                                             mean=april_means,
-                                             std=april_stds,
-                                             image_sizes=april_sizes,
-                                             batch_size=batch_size,
-                                             )
-    subset_finder_may = SubsetModelChooser(test_images=may_val_images,
-                                           labels=labels,
-                                           models=may_models,
-                                           mean=may_means,
-                                           std=may_stds,
-                                           image_sizes=may_sizes,
+    subset_finder_all_month = SubsetFinder(images_arr=all_month_val_images,
+                                           yaml_path=yaml_path,
+                                           model_paths=all_month_models,
+                                           means=all_month_means,
+                                           stds=all_month_stds,
+                                           image_sizes=all_month_sizes,
                                            batch_size=batch_size,
                                            )
+
+    subset_finder_march = SubsetFinder(images_arr=march_val_images,
+                                       yaml_path=yaml_path,
+                                       model_paths=march_models,
+                                       means=march_means,
+                                       stds=march_stds,
+                                       image_sizes=march_sizes,
+                                       batch_size=batch_size,
+                                       )
+
+    subset_finder_april = SubsetFinder(images_arr=april_val_images,
+                                       yaml_path=yaml_path,
+                                       model_paths=april_models,
+                                       means=april_means,
+                                       stds=april_stds,
+                                       image_sizes=april_sizes,
+                                       batch_size=batch_size,
+                                       )
+    subset_finder_may = SubsetFinder(images_arr=may_val_images,
+                                     yaml_path=yaml_path,
+                                     model_paths=may_models,
+                                     means=may_means,
+                                     stds=may_stds,
+                                     image_sizes=may_sizes,
+                                     batch_size=batch_size,
+                                     )
     print(f'\n\n\n----- FINDING BEST ALL MONTH SUBSET -----\n\n\n')
 
     am_best_models, am_best_means, am_best_std = subset_finder_all_month()
