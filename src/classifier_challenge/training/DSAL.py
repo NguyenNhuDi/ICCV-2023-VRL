@@ -221,11 +221,10 @@ class DSAL:
         for i in range(len(self.images)):
 
             if cut_mix_function is not None:
-                if random.randint(0,10) < 5:
+                if random.randint(0, 10) < 5:
                     self.index_arr.append((i, True))
 
             self.index_arr.append((i, False))
-
 
         self.index_arr = np.array(self.index_arr)
 
@@ -294,14 +293,14 @@ class DSAL:
     @staticmethod
     def __batch_image_label__(read_and_transform_function,
                               cut_mix_function,
-                             images_arr: np.array,
-                             yml,
-                             index_queue: mp.JoinableQueue,
-                             image_label_queue: mp.JoinableQueue,
-                             command_queue: mp.JoinableQueue,
-                             transform=None,
-                             mean=None,
-                             std=None):
+                              images_arr: np.array,
+                              yml,
+                              index_queue: mp.JoinableQueue,
+                              image_label_queue: mp.JoinableQueue,
+                              command_queue: mp.JoinableQueue,
+                              transform=None,
+                              mean=None,
+                              std=None):
         while True:
             indexes = index_queue.get()
             index_queue.task_done()
@@ -317,12 +316,10 @@ class DSAL:
             for item in indexes:
                 index, cut_mix = item
 
-
                 image, image_name = images_arr[index]
 
                 month = int(image_name[5])
                 year = int(image_name[3])
-
 
                 labels = yml[image_name]
 
@@ -411,4 +408,3 @@ class DSAL:
         except queue.Empty:
             time.sleep(0.01)
             return self.get_item()
-

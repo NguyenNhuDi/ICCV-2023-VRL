@@ -1,37 +1,42 @@
 {
     "yaml_path": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/updated_yml.yml",
-    "best_save_name": ["en_april_cm_1_best", "en_april_cm_2_best", "en_april_cm_3_best", "en_april_cm_4_best", "en_april_cm_5_best"],
-    "last_save_name": ["en_april_cm_1_last", "en_april_cm_2_last", "en_april_cm_3_last", "en_april_cm_4_last", "en_april_cm_5_last"],
-    "save_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Efficient Net/April/cut_mix",
-    "which_months": [4],
+    "best_save_name": ["en2m_am_embedded_0_best", "en2m_am_embedded_1_best", "en2m_am_embedded_2_best", "en2m_am_embedded_3_best", "en2m_am_embedded_4_best"],
+    "last_save_name": ["en2m_am_embedded_0_last", "en2m_am_embedded_1_last", "en2m_am_embedded_2_last", "en2m_am_embedded_3_last", "en2m_am_embedded_4_last"],
+    "save_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/SK Learn Split/Efficient_Net_2_M/all_month/no_aug/128",
+    "which_months": [3, 4, 5],
     "which_val_set": [0,1],
     "which_train_set": [0,1],
-    "image_size": 528,
-    "batch_size": 16,
-    "epochs": 63,
-    "weight_decay": [1e-07,1e-07,1e-07,1e-07,1e-07],
+    "image_size": 480,
+    "batch_size": 8,
+    "epochs": 73,
+    "weight_decay": [1e-06,1e-06,1e-06,1e-06,1e-06],
     "num_processes": 20,
-    "learning_rate": [0.1, 0.1, 0.1, 0.1, 0.1],
+    "learning_rate": [0.05, 0.05, 0.05, 0.05, 0.05],
     "momentum": [0.8, 0.8, 0.8, 0.8, 0.8],
-    "unfreeze_epoch": 3,
+    "unfreeze_epoch": 1,
     "epoch_step": 10,
     "gamma": [0.5, 0.5, 0.5, 0.5, 0.5],
-    "csv": ["/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_1.csv",
-            "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_2.csv",
-            "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_3.csv",
-            "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_4.csv",
-            "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/en_0.csv"
-
+    "csv": [
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/model_1/5.csv",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/model_1/6.csv",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/model_1/7.csv",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/model_1/8.csv",
+        "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/CSV/model_1/9.csv"
 ],
     "image_dir_20": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2020_data/images",
     "image_dir_21": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/2021_data/images",
     "model_to_load": ["","","","",""],
-    "model": "efficientnet_b6",
-    "model_name": "EFFICIENT NET APRIL",
-    "log_name": ["new_csv1.out",
-                "new_csv2.out",
-                "new_csv3.out",
-                "new_csv4.out",
-                "new_csv0.out"
-]
+    "model": "efficientnet_v2_m",
+    "model_name": "EFFICIENT NET 2 APRIL",
+    "log_name": [
+                "5.out",
+                "6.out",
+                "7.out",
+                "8.out",
+                "9.out"
+    ],
+    "cut_mix": false,
+    "month_embedding_length": 64,
+    "year_embedding_length": 64
+
 }
