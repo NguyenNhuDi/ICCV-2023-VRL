@@ -7,6 +7,9 @@ THREE_D = '3d'
 INSTANCE = 'instance'
 BATCH = "batch"
 
+import sys
+sys.path.append('/home/andrew.heschl/Documents/ICCV-2023-VRL')
+
 def my_import(class_name: str, dropout_package: str = 'torch.nn'):
     """
     Returns a class based on a string name.
@@ -107,6 +110,12 @@ def my_import(class_name: str, dropout_package: str = 'torch.nn'):
     elif class_name == "ReverseLinearBottleneck":
         from src.json_models.modules import ReverseLinearBottleneck
         return ReverseLinearBottleneck
+    elif class_name == "EfficientNetWrapper":
+        from src.json_models.efficient_net.efficient_net import EfficientNetWrapper
+        return EfficientNetWrapper
+    elif class_name == "EfficientNetv2":
+        from src.json_models.efficientnetv2.efficientnetv2 import EfficientNetv2
+        return EfficientNetv2
     else:
         module = importlib.import_module(dropout_package)
         class_ = getattr(module, class_name)

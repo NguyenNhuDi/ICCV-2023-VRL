@@ -1,7 +1,8 @@
+import sys
+sys.path.append('/home/andrew.heschl/Documents/ICCV-2023-VRL')
 import math
-
 from einops.layers.torch import Reduce
-from src.json_models.model_builder import ModelBuilder
+from src.json_models.src.model_builder import ModelBuilder
 import torch.nn as nn
 import torch
 
@@ -430,7 +431,7 @@ class XModule(nn.Module):
     """
 
     def __init__(self, in_channels, out_channels, dilations=[1], kernel_sizes=[3], mode='concat', stride=1,
-                 apply_norm: bool = False, gated=False, norm_op: str = 'instance', **kwargs):
+                 apply_norm: bool = False, gated=False, norm_op: str = 'batch', **kwargs):
         super(XModule, self).__init__()
         self.branches = nn.ModuleList()
         self.apply_norm = apply_norm
@@ -439,9 +440,9 @@ class XModule(nn.Module):
         assert not (ModuleStateController.state == '3d' and gated), "Cannot use gated convolution in 3d XModule."
 
         # Picl the norm op
-        if norm_op == INSTANCE:
+        if norm_op == INSTANCE and apply_norm:
             self.norm_op = nn.InstanceNorm2d if ModuleStateController.state == TWO_D else nn.InstanceNorm3d
-        else:
+        elif apply_norm:
             self.norm_op = nn.BatchNorm2d if ModuleStateController.state == TWO_D else nn.BatchNorm3d
 
         self.gated = gated

@@ -1,0 +1,1 @@
+#Take a folder and replace file of en trianer with right image size

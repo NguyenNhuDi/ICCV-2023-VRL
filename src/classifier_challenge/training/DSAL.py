@@ -393,7 +393,11 @@ class DSAL:
                     self.command_queue.put(None)
             return image, label
 
-        except queue.Empty:
-            time.sleep(0.01)
-            return self.get_item()
+        except Exception as e:
+            print(e, flush=True)
+
+
+        # except queue.Empty:
+        #     time.sleep(0.01)
+        #     return self.get_item()
 

@@ -1,13 +1,15 @@
 import sys
-
-from model_generator import ModelGenerator
+sys.path.append("/home/andrew.heschl/Documents/ICCV-2023-VRL")
+from src.json_models.src.model_generator import ModelGenerator
 import torch
 
 
 def main():
-    x = torch.ones((1, 3, 512, 512))
-    model = ModelGenerator(json_path="/home/andrewheschl/Documents/ICCV-2023-VRL/src/json_models/model_definitions"
-                                     "/gated_xmodule/3.json").get_model()
+    device = 'cuda' if torch.cuda.is_available() else "cpu"
+    print(device)
+    x = torch.ones((1, 3, 480, 480)).to(device)
+    model = ModelGenerator(json_path="/home/andrew.heschl/Documents/ICCV-2023-VRL/src/json_models/model_definitions"
+                                     "/env2/k37.json").get_model().to(device)
     y = model(x)
     print(y.shape)
 

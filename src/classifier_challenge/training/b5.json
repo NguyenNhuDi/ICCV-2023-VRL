@@ -1,0 +1,38 @@
+{
+    "test_dir": "",
+    "save_path": "",
+    "batch_size": "",
+    "all_models_paths": [
+        "/home/andrew.heschl/Documents/ICCV-2023-VRL/model_saves/efficnet_baseb5/en_april_cm_1_best"
+    ],
+    "all_month_sizes": [
+        456
+    ],
+    "all_month_means": [
+        [
+            0.39561980962753296,
+            0.34303587675094604,
+            0.24049165844917297
+        ]
+    ],
+    "all_month_stds": [
+        [
+            0.26866260170936584,
+            0.22643455862998962,
+            0.19213593006134033
+        ]
+    ],
+    "march_sizes": [],
+    "april_sizes": [],
+    "may_sizes": [],
+    "march_means": [],
+    "march_stds": [],
+    "april_means": [],
+    "april_stds": [],
+    "may_means": [],
+    "may_stds": [],
+    "march_models": [],
+    "april_models": [],
+    "may_models": [],
+    "run_amount": 1
+}

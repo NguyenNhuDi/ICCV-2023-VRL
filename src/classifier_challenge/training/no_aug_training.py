@@ -48,6 +48,10 @@ if __name__ == '__main__':
     best_save_name = args['best_save_name']
     last_save_name = args['last_save_name']
     save_dir = args['save_dir']
+    try:
+        os.makedirs(save_dir)
+    except:
+        pass
 
     image_size = args['image_size']
     batch_size = args['batch_size']

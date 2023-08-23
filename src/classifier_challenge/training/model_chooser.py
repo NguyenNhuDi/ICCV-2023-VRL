@@ -3,7 +3,7 @@ from torch import nn
 import warnings
 import sys
 sys.path.append("/home/andrew.heschl/Documents/ICCV-2023-VRL")
-from src.json_models.model_generator import ModelGenerator
+from src.json_models.src.model_generator import ModelGenerator
 from src.json_models.modules import ModuleStateController
 
 warnings.filterwarnings("ignore")
@@ -137,9 +137,28 @@ class ModelChooser:
                 nn.Linear(in_features=2560, out_features=1000),
                 nn.Linear(in_features=1000, out_features=7)
             )
+        elif self.id == 'efficientnet_v2_s':
+            model = models.efficientnet_v2_s(pretrained=True)
+
+            model.classifier = nn.Sequential(
+                nn.Dropout(p=0.2, inplace=True),
+                nn.Linear(in_features=1280, out_features=1000),
+                nn.ReLU(inplace=True),
+                nn.Linear(in_features=1000, out_features=7)
+            )
 
         elif self.id == 'efficientnet_v2_m':
             model = models.efficientnet_v2_m(pretrained=True)
+
+            model.classifier = nn.Sequential(
+                nn.Dropout(p=0.3, inplace=True),
+                nn.Linear(in_features=1280, out_features=1000),
+                nn.ReLU(inplace=True),
+                nn.Linear(in_features=1000, out_features=7)
+            )
+
+        elif self.id == 'efficientnet_v2_l':
+            model = models.efficientnet_v2_l(pretrained=True)
 
             model.classifier = nn.Sequential(
                 nn.Dropout(p=0.3, inplace=True),

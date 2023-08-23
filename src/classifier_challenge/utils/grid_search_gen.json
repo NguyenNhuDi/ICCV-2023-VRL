@@ -1,0 +1,39 @@
+{
+    "lr": [
+        ["lr", 0.1],
+        ["lr", 0.0],
+        ["lr", 0.0],
+        ["lr", 0.5]
+    ],
+
+    "m": [
+        ["m", 0.8],
+        ["m", 0.9],
+        ["m", 0.7],
+        ["m", 0.6]
+    ],
+
+    "wd": [
+        ["wd", 0.001],
+        ["wd", 0.00001],
+        ["wd", 0.001],
+        ["wd", 0]
+    ],
+
+    "g": [
+        ["g", 0.85],
+        ["g", 0.5],
+        ["g", 0.25]
+    ],
+
+    "image_size": 480,
+    "batch_size": 32,
+    "epochs": 73,
+    "save_dir": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/Grid_Searching/EN2L",
+    "model": "efficientnet_v2_l",
+    "model_name": "EFFICIENT NET 2 L"
+
+
+
+
+}

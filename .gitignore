@@ -1,2 +1,4 @@
 *.txt
 *.zip
+*.pyc
+model_saves/*

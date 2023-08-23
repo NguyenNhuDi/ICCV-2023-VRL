@@ -144,6 +144,10 @@ class ModelTrainer:
         train_mean, train_std = ModelTrainer.find_mean_std(train_test_dsal)
         train_test_dsal.join()
 
+        train_mean = train_mean.cpu()
+        train_std = train_std.cpu()
+
+
         print(f'{train_mean} --- {train_std}')
         f.write(f'train---{train_mean} --- {train_std}\n')
 
