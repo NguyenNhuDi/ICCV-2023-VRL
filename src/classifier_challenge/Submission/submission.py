@@ -8,6 +8,7 @@ from submission_utils import read_image
 from submission_utils import make_prediction
 from submission_utils import read_val_image
 import os
+from constants import TTA
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
@@ -50,6 +51,8 @@ if __name__ == '__main__':
     # subset chooser
     yaml_path = args['yaml_path']
     val_images = args['val_images']
+
+    all_month_models *= TTA
 
     with open(yaml_path, 'r') as f:
         labels = yaml.safe_load(f)

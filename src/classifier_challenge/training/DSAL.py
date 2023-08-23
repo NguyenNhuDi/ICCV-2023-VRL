@@ -4,6 +4,7 @@ import numpy as np
 import queue
 import time
 import torch
+import random
 
 """NOTE in the documentation transforms and augmented are used interchangeably"""
 
@@ -45,7 +46,7 @@ Attributes
 
     image_label_queue : JoinableQueue
         the queue that will hold all the augmented images and label
-        the item in the queue is stored as a tuple with the format (image_batch, label_batch)
+        the item in the queue is stored as a tuple with the format (image_batch, label_batch, month, year)
 
     command_queue : JoinableQueue
         the queue that will determines when the transformation processes will end
@@ -220,7 +221,8 @@ class DSAL:
         for i in range(len(self.images)):
 
             if cut_mix_function is not None:
-                self.index_arr.append((i, True))
+                if random.randint(0,10) < 5:
+                    self.index_arr.append((i, True))
 
             self.index_arr.append((i, False))
 
@@ -309,12 +311,18 @@ class DSAL:
 
             image_batch = []
             label_batch = []
+            month_batch = []
+            year_batch = []
 
             for item in indexes:
                 index, cut_mix = item
 
 
                 image, image_name = images_arr[index]
+
+                month = int(image_name[5])
+                year = int(image_name[3])
+
 
                 labels = yml[image_name]
 
@@ -330,14 +338,23 @@ class DSAL:
                     image_batch.append(cm_image)
                     label_batch.append(cm_label)
 
+                month_input = 0
 
+                if month == 3:
+                    month_input = -1
+                elif month == 5:
+                    month_input = 1
 
-
+                month_batch.append(torch.tensor(month_input))
+                year_batch.append(torch.tensor(year))
 
             image_batch = torch.stack(image_batch, dim=0)
             label_batch = torch.stack(label_batch, dim=0)
+            month_batch = torch.stack(month_batch, dim=0)
+            year_batch = torch.stack(year_batch, dim=0)
 
-            image_label_queue.put((image_batch, label_batch))
+            image_label_queue.put((image_batch, label_batch, month_batch, year_batch))
+
         # Waiting for get_item to be finished with the queue
         while True:
             try:
@@ -381,17 +398,15 @@ class DSAL:
 
     def get_item(self):
         try:
-            image, label = self.image_label_queue.get()
+            image, label, month, year = self.image_label_queue.get()
             self.image_label_queue.task_done()
             self.accessed += 1
 
-            # if the none counter is the same amount of processes this means that all processes eof is reached
-            # deploy the None into command queue to terminate them
-            # this is essential in stopping NO FILE found error
             if self.accessed == self.num_batches:
                 for j in range(self.num_processes):
                     self.command_queue.put(None)
-            return image, label
+
+            return image, label, month, year
 
         except queue.Empty:
             time.sleep(0.01)

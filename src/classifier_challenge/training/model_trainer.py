@@ -1,15 +1,14 @@
 import os
-from model_chooser import ModelChooser
+from model_chooser import ModelChooser, SplittedModel
 from DSAL import DSAL
-import numpy as np
-from PIL import Image
 import torch
 from torch import nn
 import pandas as pd
 import warnings
-from tqdm import tqdm
 import albumentations as A
 import random
+import time
+from tqdm import tqdm
 
 warnings.filterwarnings("ignore")
 
@@ -44,8 +43,10 @@ class ModelTrainer:
                  model='efficientnet_b6',
                  model_name='',
                  out_name='out.log',
-                 tile_size=64,
-                 cutmix=True):
+                 tile_size=256,
+                 cutmix=True,
+                 month_embedding_length=8,
+                 year_embedding_length=8):
 
         self.images = images
         self.best_save_name = best_save_name
@@ -72,6 +73,8 @@ class ModelTrainer:
         self.tile_size = tile_size
         self.current_train_dict = current_train_dict
         self.cut_mix = cutmix
+        self.month_embedding_length = month_embedding_length
+        self.year_embedding_length = year_embedding_length
 
         # making json to submit
         self.submit_json = submit_json
@@ -81,21 +84,22 @@ class ModelTrainer:
         if model_to_load != '':
             self.model = torch.load(model_to_load)
         else:
-            model_chooser = ModelChooser(model)
-            self.model = model_chooser()
+            model_chooser = ModelChooser(model, month_embedding_length=month_embedding_length,
+                                         year_embedding_length=year_embedding_length)
+            self.m, self.c = model_chooser()
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.criterion = nn.CrossEntropyLoss()
+        self.model = SplittedModel(self.m, self.c, self.device, month_embedding_length=month_embedding_length,
+                                   year_embedding_length=year_embedding_length)
+
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=momentum,
                                          weight_decay=weight_decay)
-
-        self.model.to(self.device)
 
         print(
             f'momentum: {momentum} --- gamma: {gamma} --- learning rate: {learning_rate} --- weight decay: {weight_decay}')
 
     def __call__(self):
-
         print('Program starting...')
 
         f = open(os.path.join(self.save_dir, self.out_name), 'w')
@@ -162,7 +166,10 @@ class ModelTrainer:
         val_batches = []
         val_dsal.start()
 
-        for i in tqdm(range(val_dsal.num_batches)):
+        # start = time.time()
+
+        for _ in tqdm(range(val_dsal.num_batches)):
+            # print(f'time taken: {int(time.time() - start)}.....', end='\r')
             val_batches.append(val_dsal.get_item())
 
         val_dsal.join()
@@ -184,6 +191,7 @@ class ModelTrainer:
         f.write(
             f'momentum: {self.momentum} --- gamma: {self.gamma} --- learning rate: {self.learning_rate} --- weight decay: {self.weight_decay}')
 
+        print('                                                                                            ', end='\r')
         print('starting pathing...')
         train_dsal.start()
         print('pathing finished')
@@ -211,8 +219,7 @@ class ModelTrainer:
         scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, self.epoch_step, self.gamma)
 
         print('start training')
-        for i in tqdm(range(train_dsal.num_batches)):
-
+        for _ in tqdm(range(train_dsal.num_batches)):
             if counter == batches_per_epoch:
                 total_loss = total_loss / total
                 accuracy = total_correct / total
@@ -248,12 +255,12 @@ class ModelTrainer:
             if epoch == self.unfreeze_epoch:
                 self.unfreeze()
 
-            image, label = train_dsal.get_item()
+            image, label, month, year = train_dsal.get_item()
             label = label.type(torch.int64)
             image, label = image.to(self.device), label.to(self.device)
 
             self.optimizer.zero_grad()
-            outputs = self.model(image)
+            outputs = self.model.forward(image, month, year)
             loss = self.criterion(outputs, label)
 
             if epoch < self.unfreeze_epoch:
@@ -307,12 +314,12 @@ class ModelTrainer:
         total = 0
 
         for batch in val_batches:
-            image, label = batch
+            image, label, m, y = batch
             label = label.type(torch.int64)
             image, label = image.to(self.device), label.to(self.device)
 
             with torch.no_grad():
-                outputs = self.model(image)
+                outputs = self.model.forward(image, m, y)
                 outputs = outputs.type(torch.float32)
                 loss = self.criterion(outputs, label)
 
@@ -364,7 +371,8 @@ class ModelTrainer:
         print(f'---finding mean and std ---')
 
         for _ in tqdm(range(test_dsal.num_batches)):
-            image, _ = test_dsal.get_item()
+            item = test_dsal.get_item()
+            image = item[0]
             batch = image.size(0)
             sum_ += torch.mean(image, dim=[0, 2, 3]) * batch
             sq_sum += torch.mean(image ** 2, dim=[0, 2, 3]) * batch

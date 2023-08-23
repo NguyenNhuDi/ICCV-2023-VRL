@@ -49,6 +49,11 @@ if __name__ == '__main__':
     last_save_name = args['last_save_name']
     save_dir = args['save_dir']
 
+    try:
+        os.makedirs(save_dir)
+    except Exception:
+        print(f'File already exists no need to create')
+
     image_size = args['image_size']
     batch_size = args['batch_size']
     epochs = args['epochs']
@@ -74,6 +79,9 @@ if __name__ == '__main__':
 
     cut_mix = args['cut_mix']
 
+    month_embedding_length = args['month_embedding_length']
+    year_embedding_length = args['year_embedding_length']
+
     image_paths = glob.glob(f'{image_dir_20}/*.jpg')
     image_paths += glob.glob(f'{image_dir_21}/*.jpg')
 
@@ -82,16 +90,68 @@ if __name__ == '__main__':
     train_transform = A.Compose(
         transforms=[
             A.Resize(image_size, image_size),
-            A.Flip(p=0.5),
-            A.Rotate(
-                limit=(-90, 90),
-                interpolation=1,
-                border_mode=0,
-                value=0,
-                mask_value=0,
-                always_apply=False,
-                p=0.75,
+
+            A.OneOf(
+                transforms=[
+                    A.Flip(p=0.5),
+                    A.Rotate(
+                        limit=(-90, 90),
+                        interpolation=1,
+                        border_mode=0,
+                        value=0,
+                        mask_value=0,
+                        always_apply=False,
+                        p=0.75,
+                    )
+                ],
+                p=0.3
             ),
+            A.OneOf(
+                transforms=[
+                    A.Flip(p=0.5),
+                    A.Rotate(
+                        limit=(-90, 90),
+                        interpolation=1,
+                        border_mode=0,
+                        value=0,
+                        mask_value=0,
+                        always_apply=False,
+                        p=0.75,
+                    )
+                ],
+                p=0.3
+            ),
+            A.OneOf(
+                transforms=[
+                    A.Flip(p=0.5),
+                    A.Rotate(
+                        limit=(-90, 90),
+                        interpolation=1,
+                        border_mode=0,
+                        value=0,
+                        mask_value=0,
+                        always_apply=False,
+                        p=0.75,
+                    )
+                ],
+                p=0.3
+            ),
+            A.OneOf(
+                transforms=[
+                    A.Flip(p=0.5),
+                    A.Rotate(
+                        limit=(-90, 90),
+                        interpolation=1,
+                        border_mode=0,
+                        value=0,
+                        mask_value=0,
+                        always_apply=False,
+                        p=0.75,
+                    )
+                ],
+                p=0.3
+            ),
+
             A.Lambda(image=lambda_transform)
         ],
         p=1.0,
@@ -245,10 +305,12 @@ if __name__ == '__main__':
                                model=model,
                                model_name=f'{model_name} -- {i + 1}',
                                out_name=out_name[i],
-                               cutmix=cut_mix
+                               cutmix=cut_mix,
+                               month_embedding_length=month_embedding_length,
+                               year_embedding_length=year_embedding_length
                                )
 
         submit_json = trainer()
 
-    with open(f'{model_name}.json', 'w') as json_file:
+    with open(f'{save_dir}/{model_name}.json', 'w') as json_file:
         json.dump(submit_json, json_file, indent=4)
