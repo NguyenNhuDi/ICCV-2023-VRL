@@ -189,7 +189,8 @@ class DSAL:
                  max_queue_size=50,
                  transform=None,
                  mean=None,
-                 std=None):
+                 std=None,
+                 plant_index=None):
 
         assert batch_size >= 1, 'The batch size entered is <= 0'
         assert epochs >= 1, 'The epochs entered is <= 0'
@@ -210,6 +211,7 @@ class DSAL:
         self.max_queue_size = max_queue_size
         self.mean = mean
         self.std = std
+        self.plant_index = plant_index
 
         # defining the joinable queues
         self.index_queue = mp.JoinableQueue()
@@ -221,10 +223,11 @@ class DSAL:
         for i in range(len(self.images)):
 
             if cut_mix_function is not None:
-                if random.randint(0, 10) < 5:
+                if random.randint(0,10) < 5:
                     self.index_arr.append((i, True))
 
             self.index_arr.append((i, False))
+
 
         self.index_arr = np.array(self.index_arr)
 
@@ -244,7 +247,8 @@ class DSAL:
                                     self.command_queue,
                                     self.transform,
                                     mean,
-                                    std))
+                                    std,
+                                    self.plant_index))
             self.read_transform_processes.append(proc)
 
         # counter to tell when the processes terminate
@@ -293,14 +297,15 @@ class DSAL:
     @staticmethod
     def __batch_image_label__(read_and_transform_function,
                               cut_mix_function,
-                              images_arr: np.array,
-                              yml,
-                              index_queue: mp.JoinableQueue,
-                              image_label_queue: mp.JoinableQueue,
-                              command_queue: mp.JoinableQueue,
-                              transform=None,
-                              mean=None,
-                              std=None):
+                             images_arr: np.array,
+                             yml,
+                             index_queue: mp.JoinableQueue,
+                             image_label_queue: mp.JoinableQueue,
+                             command_queue: mp.JoinableQueue,
+                             transform=None,
+                             mean=None,
+                             std=None,
+                             plant_index=None):
         while True:
             indexes = index_queue.get()
             index_queue.task_done()
@@ -312,16 +317,24 @@ class DSAL:
             label_batch = []
             month_batch = []
             year_batch = []
+            plant_batch = []
 
             for item in indexes:
                 index, cut_mix = item
+
 
                 image, image_name = images_arr[index]
 
                 month = int(image_name[5])
                 year = int(image_name[3])
 
+
                 labels = yml[image_name]
+
+                p_index = None
+
+                if plant_index is not None:
+                    p_index = plant_index[image_name]
 
                 # Transforming it normally
                 if not cut_mix:
@@ -344,13 +357,19 @@ class DSAL:
 
                 month_batch.append(torch.tensor(month_input))
                 year_batch.append(torch.tensor(year))
+                plant_batch.append(torch.tensor(p_index))
 
             image_batch = torch.stack(image_batch, dim=0)
             label_batch = torch.stack(label_batch, dim=0)
             month_batch = torch.stack(month_batch, dim=0)
             year_batch = torch.stack(year_batch, dim=0)
+            plant_batch = torch.stack(plant_batch, dim=0)
 
-            image_label_queue.put((image_batch, label_batch, month_batch, year_batch))
+
+            if plant_index is not None:
+                image_label_queue.put((image_batch, label_batch, month_batch, year_batch, plant_batch))
+            else:
+                 image_label_queue.put((image_batch, label_batch, month_batch, year_batch))
 
         # Waiting for get_item to be finished with the queue
         while True:
@@ -395,7 +414,7 @@ class DSAL:
 
     def get_item(self):
         try:
-            image, label, month, year = self.image_label_queue.get()
+            image, label, month, year, plant = self.image_label_queue.get()
             self.image_label_queue.task_done()
             self.accessed += 1
 
@@ -403,8 +422,9 @@ class DSAL:
                 for j in range(self.num_processes):
                     self.command_queue.put(None)
 
-            return image, label, month, year
+            return image, label, month, year, plant
 
         except queue.Empty:
             time.sleep(0.01)
             return self.get_item()
+

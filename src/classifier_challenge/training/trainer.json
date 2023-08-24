@@ -8,12 +8,12 @@
     "which_train_set": [0,1],
     "image_size": 480,
     "batch_size": 8,
-    "epochs": 73,
+    "epochs": 83,
     "weight_decay": [1e-06,1e-06,1e-06,1e-06,1e-06],
     "num_processes": 20,
     "learning_rate": [0.05, 0.05, 0.05, 0.05, 0.05],
     "momentum": [0.8, 0.8, 0.8, 0.8, 0.8],
-    "unfreeze_epoch": 1,
+    "unfreeze_epoch": 3,
     "epoch_step": 10,
     "gamma": [0.5, 0.5, 0.5, 0.5, 0.5],
     "csv": [
@@ -37,6 +37,7 @@
     ],
     "cut_mix": false,
     "month_embedding_length": 64,
-    "year_embedding_length": 64
+    "year_embedding_length": 64,
+    "plant_index": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/plant_index.yml"
 
 }

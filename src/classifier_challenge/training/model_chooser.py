@@ -142,7 +142,7 @@ class ModelChooser:
 
             classifier = nn.Sequential(
                 nn.Dropout(p=0.2, inplace=True),
-                nn.Linear(in_features=1280 + self.month_embedding_length + self.year_embedding_length,
+                nn.Linear(in_features=1280 + self.month_embedding_length * 2 + self.year_embedding_length,
                           out_features=1000),
                 nn.ReLU(inplace=True),
                 nn.Linear(in_features=1000, out_features=7)
@@ -153,7 +153,7 @@ class ModelChooser:
 
             classifier = nn.Sequential(
                 nn.Dropout(p=0.3, inplace=True),
-                nn.Linear(in_features=1280 + self.month_embedding_length + self.year_embedding_length
+                nn.Linear(in_features=1280 + self.month_embedding_length * 2 + self.year_embedding_length
                           , out_features=1000),
                 nn.Linear(in_features=1000, out_features=7)
             )
@@ -373,25 +373,26 @@ class SplittedModel(nn.Module):
         self.model.to(device)
         self.classifier.to(device)
 
-    def forward(self, img, month, year):
+    def forward(self, img, month, year, plant):
         image_embedding = torch.flatten(self.model(img), start_dim=1)
         batch_size = image_embedding.shape[0]
 
-        month_batch = torch.tensor()
-        year_batch = torch.tensor()
+        month_batch = []
+        year_batch = []
+        plant_batch = []
 
         for i in range(batch_size):
-            month_batch = torch.cat((month_batch, (torch.randn(self.month_embedding_length) * 0.1) + month[i]))
-            year_batch = torch.cat((year_batch, (torch.randn(self.year_embedding_length) * 0.1) + year[i]))
+            month_batch.append((torch.randn(self.month_embedding_length) * 0.1) + month[i])
+            year_batch.append((torch.randn(self.year_embedding_length) * 0.1) + year[i])
+            plant_batch.append((torch.randn(self.year_embedding_length) * 0.1) + (plant[i] / 100))
 
-        print(month.shape)
-
-        # month_batch = torch.stack(month_batch, dim=0).to(self.device)
-        # year_batch = torch.stack(year_batch, dim=0).to(self.device)
+        month_batch = torch.stack(month_batch, dim=0).to(self.device)
+        year_batch = torch.stack(year_batch, dim=0).to(self.device)
+        plant_batch = torch.stack(plant_batch, dim=0).to(self.device)
 
         image_embedding = image_embedding.to(self.device)
 
-        embedding = torch.cat((image_embedding, month_batch, year_batch), dim=1)
+        embedding = torch.cat((image_embedding, month_batch, year_batch, plant_batch), dim=1)
 
         return self.classifier(embedding)
 

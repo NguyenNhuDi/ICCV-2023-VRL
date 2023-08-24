@@ -82,6 +82,8 @@ if __name__ == '__main__':
     month_embedding_length = args['month_embedding_length']
     year_embedding_length = args['year_embedding_length']
 
+    plant_index_path = args['plant_index']
+
     image_paths = glob.glob(f'{image_dir_20}/*.jpg')
     image_paths += glob.glob(f'{image_dir_21}/*.jpg')
 
@@ -191,6 +193,14 @@ if __name__ == '__main__':
 
     with open(yaml_path, 'r') as f:
         yml_labels = yaml.safe_load(f)
+
+    plant_indexes = None
+
+    try:
+        with open(plant_index_path, 'r') as f:
+            plant_indexes = yaml.safe_load(f)
+    except:
+        print('plant index skipped')
 
     print(f'--- OPENING IMAGES ---')
     opened_images = []
@@ -307,7 +317,8 @@ if __name__ == '__main__':
                                out_name=out_name[i],
                                cutmix=cut_mix,
                                month_embedding_length=month_embedding_length,
-                               year_embedding_length=year_embedding_length
+                               year_embedding_length=year_embedding_length,
+                               plant_index=plant_indexes
                                )
 
         submit_json = trainer()

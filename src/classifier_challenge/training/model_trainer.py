@@ -25,6 +25,7 @@ class ModelTrainer:
                  images,
                  train_transform=None,
                  val_transform=None,
+                 plant_index=None,
                  weight_decay=0,
                  batch_size=32,
                  epochs=20,
@@ -75,6 +76,7 @@ class ModelTrainer:
         self.cut_mix = cutmix
         self.month_embedding_length = month_embedding_length
         self.year_embedding_length = year_embedding_length
+        self.plant_index = plant_index
 
         # making json to submit
         self.submit_json = submit_json
@@ -142,7 +144,8 @@ class ModelTrainer:
                                epochs=1,
                                num_processes=self.num_processes,
                                max_queue_size=self.num_processes * 2,
-                               transform=self.train_transform)
+                               transform=self.train_transform,
+                               plant_index=self.plant_index)
 
         train_test_dsal.start()
         train_mean, train_std = ModelTrainer.find_mean_std(train_test_dsal)
@@ -161,7 +164,8 @@ class ModelTrainer:
                         max_queue_size=self.num_processes * 2,
                         transform=self.val_transform,
                         mean=train_mean,
-                        std=train_std)
+                        std=train_std,
+                        plant_index=self.plant_index)
 
         val_batches = []
         val_dsal.start()
@@ -178,6 +182,7 @@ class ModelTrainer:
 
         train_dsal = DSAL(images=train_set,
                           yml=self.labels,
+                          plant_index=self.plant_index,
                           read_and_transform_function=ModelTrainer.transform_image_label,
                           cut_mix_function=cut_mix,
                           batch_size=self.batch_size,
@@ -242,7 +247,6 @@ class ModelTrainer:
                 message = f'Best epoch: {best_epoch}, Best Loss: {best_loss:6.8f}, Best Accuracy: {best_accuracy:6.8f}\n'
                 print(message)
                 f.write(message)
-                # get_last_lr()
                 self.model.train()
 
                 total = 0
@@ -255,12 +259,12 @@ class ModelTrainer:
             if epoch == self.unfreeze_epoch:
                 self.unfreeze()
 
-            image, label, month, year = train_dsal.get_item()
+            image, label, month, year, plant_index = train_dsal.get_item()
             label = label.type(torch.int64)
             image, label = image.to(self.device), label.to(self.device)
 
             self.optimizer.zero_grad()
-            outputs = self.model.forward(image, month, year)
+            outputs = self.model.forward(image, month, year, plant_index)
             loss = self.criterion(outputs, label)
 
             if epoch < self.unfreeze_epoch:
@@ -314,12 +318,12 @@ class ModelTrainer:
         total = 0
 
         for batch in val_batches:
-            image, label, m, y = batch
+            image, label, m, y, p = batch
             label = label.type(torch.int64)
             image, label = image.to(self.device), label.to(self.device)
 
             with torch.no_grad():
-                outputs = self.model.forward(image, m, y)
+                outputs = self.model.forward(image, m, y, p)
                 outputs = outputs.type(torch.float32)
                 loss = self.criterion(outputs, label)
 
