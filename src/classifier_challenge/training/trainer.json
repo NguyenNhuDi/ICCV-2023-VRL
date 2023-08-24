@@ -38,6 +38,7 @@
     "cut_mix": false,
     "month_embedding_length": 64,
     "year_embedding_length": 64,
+    "plant_embedding_length": 64,
     "plant_index": "/home/nhu.nguyen2/ICCV_2023/classifier_challenge/CSV_Implemented_training/plant_index.yml"
 
 }

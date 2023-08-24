@@ -3,17 +3,19 @@ from torch import nn
 import warnings
 import sys
 import torch
-from constants import MONTH_EMBEDDING_LENGTHS
-from constants import YEAR_EMBEDDING_LENGTHS
+
 
 warnings.filterwarnings("ignore")
 
 
 class ModelChooser:
-    def __init__(self, model_name, month_embedding_length, year_embedding_length):
+    def __init__(self, model_name, month_embedding_length, year_embedding_length, plant_embedding_length,
+                 device='cuda' if torch.cuda.is_available() else 'cpu'):
         self.month_embedding_length = month_embedding_length
         self.year_embedding_length = year_embedding_length
         self.id = model_name
+        self.plant_embedding_length = plant_embedding_length
+        self.device = device
 
     def __call__(self):
         return self.__choose_model__()
@@ -21,8 +23,6 @@ class ModelChooser:
     def __choose_model__(self):
 
         model = None
-        classifier = None
-
         # TODO add the rest of the ids, group them by family pls (and alphabetical)
 
         if self.id == 'alexnet':
@@ -142,21 +142,35 @@ class ModelChooser:
 
             classifier = nn.Sequential(
                 nn.Dropout(p=0.2, inplace=True),
-                nn.Linear(in_features=1280 + self.month_embedding_length * 2 + self.year_embedding_length,
+                nn.Linear(in_features=1280 + self.month_embedding_length  + self.year_embedding_length
+                          + self.plant_embedding_length,
                           out_features=1000),
                 nn.ReLU(inplace=True),
                 nn.Linear(in_features=1000, out_features=7)
             )
+
+            model = SplittedModel(model=model, classifier=classifier,
+                                  device=self.device,
+                                  month_embedding_length=self.month_embedding_length,
+                                  year_embedding_length=self.year_embedding_length,
+                                  plant_embedding_length=self.plant_embedding_length)
 
         elif self.id == 'efficientnet_v2_m':
             model = models.efficientnet_v2_m(pretrained=True)
 
             classifier = nn.Sequential(
                 nn.Dropout(p=0.3, inplace=True),
-                nn.Linear(in_features=1280 + self.month_embedding_length * 2 + self.year_embedding_length
+                nn.Linear(in_features=1280 + self.month_embedding_length  + self.year_embedding_length
+                          + self.plant_embedding_length
                           , out_features=1000),
                 nn.Linear(in_features=1000, out_features=7)
             )
+
+            model = SplittedModel(model=model, classifier=classifier,
+                                  device=self.device,
+                                  month_embedding_length=self.month_embedding_length,
+                                  year_embedding_length=self.year_embedding_length,
+                                  plant_embedding_length=self.plant_embedding_length)
 
         elif self.id == 'efficientnet_v2_l':
             model = models.efficientnet_v2_l(pretrained=True)
@@ -231,7 +245,7 @@ class ModelChooser:
         elif self.id == 'resnet50':
             model = models.resnet50(pretrained=True)
 
-            model.fc == nn.Sequential(
+            model.fc = nn.Sequential(
                 nn.Linear(in_features=2048, out_features=1000),
                 nn.Linear(in_features=1000, out_features=7)
             )
@@ -346,15 +360,31 @@ class ModelChooser:
             model.classifier = nn.Sequential(
                 nn.Linear(in_features=768, out_features=7)
             )
+        elif self.id == 'three_month_baseline':
+
+            """
+            IMPLEMENT YOUR  CLASSIFIER LAYER HERE
+            """
+            classifier_layer = None
+            """============================"""
+
+            model = ThreeMonthBase(mar_path=r'base_line_models/env2_01_march2_best.pth',
+                                   apr_path=r'base_line_models/env2_01_april0_best.pth',
+                                   may_path=r'base_line_models/env2_01_may4_best.pth',
+                                   classifier_layer=classifier_layer,
+                                   device=self.device,
+                                   month_embedding_length=self.month_embedding_length,
+                                   year_embedding_length=self.year_embedding_length,
+                                   plant_embedding_length=self.plant_embedding_length)
 
         else:
             sys.exit(f'Model: {self.id} is not part of the registered models')
 
-        return model, classifier
+        return model
 
 
 class SplittedModel(nn.Module):
-    def __init__(self, model, classifier, device, month_embedding_length, year_embedding_length) -> None:
+    def __init__(self, model, classifier, device, month_embedding_length, year_embedding_length, plant_embedding_length) -> None:
         super().__init__()
 
         self.device = device
@@ -362,6 +392,7 @@ class SplittedModel(nn.Module):
         self.classifier = classifier
         self.month_embedding_length = month_embedding_length
         self.year_embedding_length = year_embedding_length
+        self.plant_embedding_length = plant_embedding_length
 
         names = [n for n, _ in model.named_children()]
 
@@ -384,7 +415,7 @@ class SplittedModel(nn.Module):
         for i in range(batch_size):
             month_batch.append((torch.randn(self.month_embedding_length) * 0.1) + month[i])
             year_batch.append((torch.randn(self.year_embedding_length) * 0.1) + year[i])
-            plant_batch.append((torch.randn(self.year_embedding_length) * 0.1) + (plant[i] / 100))
+            plant_batch.append((torch.randn(self.plant_embedding_length) * 0.1) + (plant[i] / 100))
 
         month_batch = torch.stack(month_batch, dim=0).to(self.device)
         year_batch = torch.stack(year_batch, dim=0).to(self.device)
@@ -396,5 +427,69 @@ class SplittedModel(nn.Module):
 
         return self.classifier(embedding)
 
+
+class ThreeMonthBase(nn.Module):
+    def __init__(self, mar_path, apr_path, may_path, classifier_layer, device, month_embedding_length,
+                 year_embedding_length, plant_embedding_length):
+        super().__init__()
+
+        self.march_model = torch.load(mar_path)
+        self.april_model = torch.load(apr_path)
+        self.may_model = torch.load(may_path)
+        self.classifier_layer = classifier_layer
+        self.device = device
+        self.month_embedding_length = month_embedding_length
+        self.year_embedding_length = year_embedding_length
+        self.plant_embedding_length = plant_embedding_length
+
+        names = [n for n, _ in self.march_model.named_children()]
+
+        if names[-1] == 'fc':
+            self.march_model.fc = nn.Identity()
+            self.april_model.fc = nn.Identity()
+            self.may_model.fc = nn.Identity()
+        elif names[-1] == 'classifier':
+            self.march_model.classifier = nn.Identity()
+            self.april_model.classifier = nn.Identity()
+            self.may_model.classifier = nn.Identity()
+
+        self.march_model.to(device)
+        self.apr_model.to(device)
+        self.may_model.to(device)
+        self.classifier_layer.to(device)
+
+    def forward(self, img, month, year, plant):
+        image_embedding = torch.flatten(self.march_model(img), start_dim=1)
+
+        if month == 4:
+            image_embedding = torch.flatten(self.april_model(img), start_dim=1)
+        elif month == 5:
+            image_embedding = torch.flatten(self.may_model(img), start_dim=1)
+
+        batch_size = image_embedding.shape[0]
+
+        # month_batch = []
+        # year_batch = []
+        # plant_batch = []
+
+        embedding_batch = []
+
+        for i in range(batch_size):
+            embedding_batch.append((torch.randn(self.month_embedding_length) * 0.1) + month[i])
+            embedding_batch.append((torch.randn(self.year_embedding_length) * 0.1) + year[i])
+            embedding_batch.append((torch.randn(self.plant_embedding_length) * 0.1) + (plant[i] / 100))
+
+        embedding_batch = torch.stack(embedding_batch, dim=0).to(self.device)
+
+        image_embedding = image_embedding.to(self.device)
+
+        """
+        ADD YOUR CODE HERE
+        VVVVVVVVVVVVVVVVVVVVVVVVVV
+        """
+
+        embedding = None
+
+        return self.classifier(embedding)
 
 

@@ -79,81 +79,87 @@ if __name__ == '__main__':
 
     cut_mix = args['cut_mix']
 
+    month_embedding_length = args['month_embedding_length']
+    year_embedding_length = args['year_embedding_length']
+    plant_embedding_length = args['plant_embedding_length']
+
+    plant_index_path = args['plant_index']
+
     image_paths = glob.glob(f'{image_dir_20}/*.jpg')
     image_paths += glob.glob(f'{image_dir_21}/*.jpg')
 
     image_paths.sort(key=lambda x: os.path.basename(x))
 
     train_transform = A.Compose(
-        transforms=[
-            A.Resize(image_size, image_size),
+                transforms=[
+                    A.Resize(image_size, image_size),
 
-            A.Flip(p=0.5),
-            A.Rotate(
-                limit=(-90, 90),
-                interpolation=1,
-                border_mode=0,
-                value=0,
-                mask_value=0,
-                always_apply=False,
-                p=0.75,
-            ),
+                    A.Flip(p=0.5),
+                    A.Rotate(
+                        limit=(-90, 90),
+                        interpolation=1,
+                        border_mode=0,
+                        value=0,
+                        mask_value=0,
+                        always_apply=False,
+                        p=0.75,
+                    ),
 
-            A.OneOf(
-                transforms=[
-                    A.Defocus(radius=[1, 1], alias_blur=(0.1, 0.3), p=0.2),
-                    A.Sharpen(alpha=(0.01, 0.125), lightness=(1, 1), p=0.2),
-                    A.RGBShift(r_shift_limit=[-5, 5], g_shift_limit=[-3, 3], b_shift_limit=[-5, 5], p=0.2),
-                    A.RandomBrightnessContrast(brightness_limit=[-0.015, 0.015], contrast_limit=[0, 0], p=0.2),
-                    A.RandomBrightnessContrast(brightness_limit=[0.0, 0.0], contrast_limit=[-0.015, 0.015], p=0.2),
-                ],
-                p=0.2,
-            ),
-            A.OneOf(
-                transforms=[
-                    A.Defocus(radius=[1, 1], alias_blur=(0.1, 0.3), p=0.2),
-                    A.Sharpen(alpha=(0.01, 0.125), lightness=(1, 1), p=0.2),
-                    A.RGBShift(r_shift_limit=[-5, 5], g_shift_limit=[-3, 3], b_shift_limit=[-5, 5], p=0.2),
-                    A.RandomBrightnessContrast(brightness_limit=[-0.015, 0.015], contrast_limit=[0, 0], p=0.2),
-                    A.RandomBrightnessContrast(brightness_limit=[0.0, 0.0], contrast_limit=[-0.015, 0.015], p=0.2),
-                ],
-                p=0.2,
-            ),
-            A.OneOf(
-                transforms=[
-                    A.Defocus(radius=[1, 1], alias_blur=(0.1, 0.3), p=0.2),
-                    A.Sharpen(alpha=(0.01, 0.125), lightness=(1, 1), p=0.2),
-                    A.RGBShift(r_shift_limit=[-5, 5], g_shift_limit=[-3, 3], b_shift_limit=[-5, 5], p=0.2),
-                    A.RandomBrightnessContrast(brightness_limit=[-0.015, 0.015], contrast_limit=[0, 0], p=0.2),
-                    A.RandomBrightnessContrast(brightness_limit=[0.0, 0.0], contrast_limit=[-0.015, 0.015], p=0.2),
-                ],
-                p=0.2,
-            ),
-            A.OneOf(
-                transforms=[
-                    A.Defocus(radius=[1, 1], alias_blur=(0.1, 0.3), p=0.2),
-                    A.Sharpen(alpha=(0.01, 0.125), lightness=(1, 1), p=0.2),
-                    A.RGBShift(r_shift_limit=[-5, 5], g_shift_limit=[-3, 3], b_shift_limit=[-5, 5], p=0.2),
-                    A.RandomBrightnessContrast(brightness_limit=[-0.015, 0.015], contrast_limit=[0, 0], p=0.2),
-                    A.RandomBrightnessContrast(brightness_limit=[0.0, 0.0], contrast_limit=[-0.015, 0.015], p=0.2),
-                ],
-                p=0.2,
-            ),
-            A.OneOf(
-                transforms=[
-                    A.Defocus(radius=[1, 1], alias_blur=(0.1, 0.3), p=0.2),
-                    A.Sharpen(alpha=(0.01, 0.125), lightness=(1, 1), p=0.2),
-                    A.RGBShift(r_shift_limit=[-5, 5], g_shift_limit=[-3, 3], b_shift_limit=[-5, 5], p=0.2),
-                    A.RandomBrightnessContrast(brightness_limit=[-0.015, 0.015], contrast_limit=[0, 0], p=0.2),
-                    A.RandomBrightnessContrast(brightness_limit=[0.0, 0.0], contrast_limit=[-0.015, 0.015], p=0.2),
-                ],
-                p=0.2,
-            ),
+                    A.OneOf(
+                        transforms=[
+                            A.Defocus(radius=[1, 1], alias_blur=(0.1, 0.3), p=0.2),
+                            A.Sharpen(alpha=(0.01, 0.125), lightness=(1, 1), p=0.2),
+                            A.RGBShift(r_shift_limit=[-5, 5], g_shift_limit=[-3, 3], b_shift_limit=[-5, 5], p=0.2),
+                            A.RandomBrightnessContrast(brightness_limit=[-0.015, 0.015], contrast_limit=[0, 0], p=0.2),
+                            A.RandomBrightnessContrast(brightness_limit=[0.0, 0.0], contrast_limit=[-0.015, 0.015], p=0.2),
+                        ],
+                        p=0.2,
+                    ),
+                    A.OneOf(
+                        transforms=[
+                            A.Defocus(radius=[1, 1], alias_blur=(0.1, 0.3), p=0.2),
+                            A.Sharpen(alpha=(0.01, 0.125), lightness=(1, 1), p=0.2),
+                            A.RGBShift(r_shift_limit=[-5, 5], g_shift_limit=[-3, 3], b_shift_limit=[-5, 5], p=0.2),
+                            A.RandomBrightnessContrast(brightness_limit=[-0.015, 0.015], contrast_limit=[0, 0], p=0.2),
+                            A.RandomBrightnessContrast(brightness_limit=[0.0, 0.0], contrast_limit=[-0.015, 0.015], p=0.2),
+                        ],
+                        p=0.2,
+                    ),
+                    A.OneOf(
+                        transforms=[
+                            A.Defocus(radius=[1, 1], alias_blur=(0.1, 0.3), p=0.2),
+                            A.Sharpen(alpha=(0.01, 0.125), lightness=(1, 1), p=0.2),
+                            A.RGBShift(r_shift_limit=[-5, 5], g_shift_limit=[-3, 3], b_shift_limit=[-5, 5], p=0.2),
+                            A.RandomBrightnessContrast(brightness_limit=[-0.015, 0.015], contrast_limit=[0, 0], p=0.2),
+                            A.RandomBrightnessContrast(brightness_limit=[0.0, 0.0], contrast_limit=[-0.015, 0.015], p=0.2),
+                        ],
+                        p=0.2,
+                    ),
+                    A.OneOf(
+                        transforms=[
+                            A.Defocus(radius=[1, 1], alias_blur=(0.1, 0.3), p=0.2),
+                            A.Sharpen(alpha=(0.01, 0.125), lightness=(1, 1), p=0.2),
+                            A.RGBShift(r_shift_limit=[-5, 5], g_shift_limit=[-3, 3], b_shift_limit=[-5, 5], p=0.2),
+                            A.RandomBrightnessContrast(brightness_limit=[-0.015, 0.015], contrast_limit=[0, 0], p=0.2),
+                            A.RandomBrightnessContrast(brightness_limit=[0.0, 0.0], contrast_limit=[-0.015, 0.015], p=0.2),
+                        ],
+                        p=0.2,
+                    ),
+                    A.OneOf(
+                        transforms=[
+                            A.Defocus(radius=[1, 1], alias_blur=(0.1, 0.3), p=0.2),
+                            A.Sharpen(alpha=(0.01, 0.125), lightness=(1, 1), p=0.2),
+                            A.RGBShift(r_shift_limit=[-5, 5], g_shift_limit=[-3, 3], b_shift_limit=[-5, 5], p=0.2),
+                            A.RandomBrightnessContrast(brightness_limit=[-0.015, 0.015], contrast_limit=[0, 0], p=0.2),
+                            A.RandomBrightnessContrast(brightness_limit=[0.0, 0.0], contrast_limit=[-0.015, 0.015], p=0.2),
+                        ],
+                        p=0.2,
+                    ),
 
-            A.Lambda(image=lambda_transform)
-        ],
-        p=1.0,
-    )
+                    A.Lambda(image=lambda_transform)
+                ],
+                p=1.0,
+            )
 
     val_transform = A.Compose(
         transforms=[
@@ -189,6 +195,14 @@ if __name__ == '__main__':
 
     with open(yaml_path, 'r') as f:
         yml_labels = yaml.safe_load(f)
+
+    plant_indexes = None
+
+    try:
+        with open(plant_index_path, 'r') as f:
+            plant_indexes = yaml.safe_load(f)
+    except:
+        print('plant index skipped')
 
     print(f'--- OPENING IMAGES ---')
     opened_images = []
@@ -303,7 +317,11 @@ if __name__ == '__main__':
                                model=model,
                                model_name=f'{model_name} -- {i + 1}',
                                out_name=out_name[i],
-                               cutmix=cut_mix
+                               cutmix=cut_mix,
+                               month_embedding_length=month_embedding_length,
+                               year_embedding_length=year_embedding_length,
+                               plant_embedding_length=plant_embedding_length,
+                               plant_index=plant_indexes
                                )
 
         submit_json = trainer()

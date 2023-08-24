@@ -47,7 +47,8 @@ class ModelTrainer:
                  tile_size=256,
                  cutmix=True,
                  month_embedding_length=8,
-                 year_embedding_length=8):
+                 year_embedding_length=8,
+                 plant_embedding_length=8):
 
         self.images = images
         self.best_save_name = best_save_name
@@ -87,13 +88,12 @@ class ModelTrainer:
             self.model = torch.load(model_to_load)
         else:
             model_chooser = ModelChooser(model, month_embedding_length=month_embedding_length,
-                                         year_embedding_length=year_embedding_length)
-            self.m, self.c = model_chooser()
+                                         year_embedding_length=year_embedding_length,
+                                         plant_embedding_length=plant_embedding_length)
+            self.model = model_chooser()
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.criterion = nn.CrossEntropyLoss()
-        self.model = SplittedModel(self.m, self.c, self.device, month_embedding_length=month_embedding_length,
-                                   year_embedding_length=year_embedding_length)
 
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=learning_rate, momentum=momentum,
                                          weight_decay=weight_decay)

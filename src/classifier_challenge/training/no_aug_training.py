@@ -81,6 +81,7 @@ if __name__ == '__main__':
 
     month_embedding_length = args['month_embedding_length']
     year_embedding_length = args['year_embedding_length']
+    plant_embedding_length = args['plant_embedding_length']
 
     plant_index_path = args['plant_index']
 
@@ -318,6 +319,7 @@ if __name__ == '__main__':
                                cutmix=cut_mix,
                                month_embedding_length=month_embedding_length,
                                year_embedding_length=year_embedding_length,
+                               plant_embedding_length=plant_embedding_length,
                                plant_index=plant_indexes
                                )
 
